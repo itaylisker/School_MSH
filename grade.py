@@ -4,19 +4,15 @@ class Grade:
     def __init__(self, name: str, hours_per_subject: dict):
         self.name = name
         self.hours_per_subject = hours_per_subject
-        self.MSH = [  # MSH is short for: "Marehet SHaot"
-                    [None, None, None, None, None, None, None, None, None, None, None, None],  # sunday
-                    [None, None, None, None, None, None, None, None, None, None, None, None],  # monday
-                    [None, None, None, None, None, None, None, None, None, None, None, None],  # tuesday
-                    [None, None, None, None, None, None, None, None, None, None, None, None],  # wednesday
-                    [None, None, None, None, None, None, None, None, None, None, None, None],  # thursday
-                    [None, None, None, None, None, None, None, None, None, None, None, None]   # friday
-        ]
+        self.MSH = []
+        for day in range(5):  # Sunday through wednesday
+            default_day_schedule = [None for hour in range(12)]  # hours 0 through 11
+            self.MSH.append(default_day_schedule)
+        self.MSH.append([None, None, None, None, None, None, None, None])
 
     def change_hour(self, teacher: teacher, day: int, hour: int, action: str):
 
         if action.lower == "remove":
-
             self.hours_per_subject[self.MSH[day - 1][hour].subject] += 1
             teacher.work_hours[day - 1][hour] = 1  # priority
             self.MSH[day - 1][hour] = None

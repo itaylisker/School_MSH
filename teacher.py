@@ -1,19 +1,15 @@
 class Teacher:
     import subject
 
-    def __init__(self, full_name: str, subject: subject):
-        self.full_name = full_name
+    def __init__(self, name: str, subject: subject):
+        self.name = name
         self.subject = subject.name
-        self.work_hours = [  # teachers don't work on hours that are marked as -1.
-            # hours that are marked as 0 are hours when the teacher is teaching.
-            # any other number is for priority reasons (1 higher priority than 2 ...)
-            [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3],  # sunday
-            [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3],  # monday
-            [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3],  # tuesday
-            [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3],  # wednesday
-            [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3],  # thursday
-            [2, 1, 1, 1, 1, 2, 3, -1, -1, -1, -1, -1]   # friday
-        ]
+        # teachers don't work on hours that are marked as -1.
+        # hours that are marked as 0 are hours when the teacher is teaching.
+        # any other number is for priority reasons (1 higher priority than 2 ...)
+        self.work_hours = [[2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3]
+                           for day in range(5)]
+        self.work_hours.append([2, 1, 1, 1, 1, 2, 2, 3, -1, -1, -1, -1])  # friday work hours
 
     def cant_work(self, day, hour, flag):
         if flag == 1:

@@ -1,104 +1,180 @@
-import grade
-import teacher
-import subject
+import tkinter as tk
+from tkinter import messagebox
+import teacher, grade, subject
+
 hours_per_subject = {}
 subjects_list = []
 teachers_list = []
 grades_list = []
 DOW_list = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
-add_or_stop_adding_subjects = int(input("if you want to add a teacher to the system press 1 else press 0"))
-while add_or_stop_adding_subjects != 0 and add_or_stop_adding_subjects != 1:
-    add_or_stop_adding_subjects = int(input("error, if you want to add a teacher to the system press 1 else press 0"))
 
-while add_or_stop_adding_subjects != 0:
-    subject_name = input("enter the teacher's name")
-    subject_hours_in_a_day = int(input("enter the amount of hours that this subject can be taught in a single day: "))
-    new_sub = subject.Subject(subject_name.lower(), subject_hours_in_a_day)
-    subjects_list.append(new_sub)
+class AddSubjectWindow:
+    global subjects_list
 
-    add_or_stop_adding_subjects = int(input("if you want to add a teacher to the system press 1 else press 0"))
-    while add_or_stop_adding_subjects != 0 and add_or_stop_adding_subjects != 1:
-        add_or_stop_adding_subjects = int(input("error, if you want to add a teacher to the system press 1 else press 0"))
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = tk.Toplevel(parent)
+        self.window.title("Add Subject")
+        self.parent.withdraw()  # Hide the parent window while this window is open
 
-add_or_stop_adding_teachers = int(input("if you want to add a teacher to the system press 1 else press 0"))
-while add_or_stop_adding_teachers != 0 and add_or_stop_adding_teachers != 1:
-    add_or_stop_adding_teachers = int(input("error, if you want to add a teacher to the system press 1 else press 0"))
+        # Create labels and entry fields
+        tk.Label(self.window, text="Enter Subject Name:").pack()
+        self.subject_name_entry = tk.Entry(self.window)
+        self.subject_name_entry.pack()
 
-while add_or_stop_adding_teachers != 0:
-    teacher_name = input("enter the teacher's name")
-    teacher_subject = input("enter the teacher's subject")
-    new_t = teacher.Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower][0])
-    teachers_list.append(new_t)
+        tk.Label(self.window, text="Enter Max Hours per Day:").pack()
+        self.max_hours_entry = tk.Entry(self.window)
+        self.max_hours_entry.pack()
 
-    for i in DOW_list:
+        # Create a button to add the subject
+        tk.Button(self.window, text="Add Subject", command=self.add_subject).pack()
 
-        while True:
-            hour_cant_work = int(input(f"enter an hour that you cant work on {i} if you cant work in this day enter -2, if you finished entering hours press -1"))
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-            while -3 < hour_cant_work < 12:
-                hour_cant_work = input(f"error, enter an hour that you cant work on {i} if you cant work in this day enter -1, if you finished entering hours press -2")
-            if hour_cant_work == -1:
-                break
-                # stop loop
-            elif hour_cant_work == -2:
-                new_t.cant_work(DOW_list.index(i), 0, 1)
-                # delete all day
-            else:
-                new_t.cant_work(DOW_list.index(i), hour_cant_work, 0)
-                # delete specific hour
+    def add_subject(self):
+        subject_name = self.subject_name_entry.get()
+        max_hours = self.max_hours_entry.get()
 
-    add_or_stop_adding_teachers = int(input("if you want to add a teacher to the system press 1 else press 0"))
-    while add_or_stop_adding_teachers != 0 and add_or_stop_adding_teachers != 1:
-        add_or_stop_adding_teachers = int(input("error, if you want to add a teacher to the system press 1 else press 0"))
+        if not subject_name or not max_hours:
+            messagebox.showerror("Input Error", "Both fields must be filled.")
+        elif subject_name.lower() in [i.name for i in subjects_list]:
+            messagebox.showerror("Input Error", "Subject Already Exists.")
+        else:
+            new_sub = subject.Subject(subject_name.lower(), int(max_hours))
+            subjects_list.append(new_sub)
+            print(f"Subject Name: {subject_name}, Max Hours per Day: {max_hours}")
+            self.window.destroy()  # Close the window
+            self.parent.deiconify()  # Show the parent window again
+
+    def on_closing(self):
+        self.parent.deiconify()  # Show the parent window again
+        self.window.destroy()
 
 
-# --------------------------------------------------------------------------------------------------------------------------------
+class AddTeacherWindow:
+    global teachers_list
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = tk.Toplevel(parent)
+        self.window.title("Add Teacher")
+        self.parent.withdraw()  # Hide the parent window while this window is open
+
+        # Create labels and entry fields
+        tk.Label(self.window, text="Enter Teacher Name:").pack()
+        self.teacher_name_entry = tk.Entry(self.window)
+        self.teacher_name_entry.pack()
+
+        tk.Label(self.window, text="Enter Teacher Subject:").pack()
+        self.teacher_subject_entry = tk.Entry(self.window)
+        self.teacher_subject_entry.pack()
+
+        tk.Label(self.window, text="Enter Teacher's Day Off (1-6):").pack()
+        self.teacher_day_off_entry = tk.Entry(self.window)
+        self.teacher_day_off_entry.pack()
+
+        # Create a button to add the teacher
+        tk.Button(self.window, text="Add Teacher", command=self.add_teacher).pack()
+
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def add_teacher(self):
+        teacher_name = self.teacher_name_entry.get()
+        teacher_subject = self.teacher_subject_entry.get()
+        teacher_day_off = self.teacher_day_off_entry.get()
+
+        if not teacher_name or not teacher_subject or not teacher_day_off:
+            messagebox.showerror("Input Error", "All fields must be filled.")
+        elif not teacher_day_off.isdigit() or int(teacher_day_off) < 1 or int(teacher_day_off) > 6:
+            messagebox.showerror("Input Error", "Teacher's day off must be a number between 1 and 6.")
+        elif teacher_subject.lower() not in [i.name for i in subjects_list]:
+            messagebox.showerror("Input Error", "Subject does not exist, please add it using the add subject button first.")
+        elif teacher_name.lower() in [i.name for i in teachers_list]:
+            messagebox.showerror("Input Error", "Teacher already exists.")
+        else:
+            new_t = teacher.Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower()][0])
+            new_t.cant_work(int(teacher_day_off), 0, 1)
+            teachers_list.append(new_t)
+            print(f"Teacher Name: {teacher_name}, Subject: {teacher_subject}, Day Off: {teacher_day_off}")
+            self.window.destroy()  # Close the window
+            self.parent.deiconify()  # Show the parent window again
+
+    def on_closing(self):
+        self.parent.deiconify()  # Show the parent window again
+        self.window.destroy()
 
 
-for i in subjects_list:
-    hours_per_subject[i.name] = 0
+class AddGradeWindow:
+    global grades_list
 
-add_or_stop_adding_grades = int(input("if you want to add a grade to the system press 1 else press 0"))
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = tk.Toplevel(parent)
+        self.window.title("Add Grade")
+        self.parent.withdraw()  # Hide the parent window while this window is open
 
-while add_or_stop_adding_grades != 0 and add_or_stop_adding_grades != 1:
-    add_or_stop_adding_grades = int(input("error, if you want to add a grade to the system press 1 else press 0"))
+        tk.Label(self.window, text="Enter Grade Name:").pack()
+        self.grade_name_entry = tk.Entry(self.window)
+        self.grade_name_entry.pack()
 
-while add_or_stop_adding_grades != 0:
-    grade_name = input("enter the grade")
 
-    for i in hours_per_subject.keys():
-        hours_for_subject = int(input(f"enter amount of hours per week that {grade_name} needs to study {i}: "))
+class MainApplication:
+    global teachers_list
+    global subjects_list
 
-        while hours_for_subject < 0 or hours_for_subject > 81:  # 81 is the amount of hours in a school week
-            if hours_for_subject + sum(hours_per_subject.values()) > 81:
-                hours_for_subject = int(input(f"amount of hours exceeds the max amount you can study in a week! please try again: "))
-            else:
-                hours_for_subject = int(input(f"input was invalid, please try again: "))
-        hours_per_subject[i] = hours_for_subject
+    def __init__(self, root):
+        self.root = root
+        self.root.title("High School Schedule Organizer")
 
-    new_g = grade.Grade(grade_name, hours_per_subject)
-    grades_list.append(new_g)
+        # Create buttons to open the "Add Subject" and "Add Teacher" windows
+        tk.Button(self.root, text="Add Subject", command=self.open_add_subject_window).pack()
+        tk.Button(self.root, text="Add Teacher", command=self.open_add_teacher_window).pack()
+        tk.Button(self.root, text="Add Grade", command=self.open_add_grade_window).pack()
 
-    add_or_stop_adding_grades = int(input("if you want to add a grade to the system press 1 else press 0"))
-    while add_or_stop_adding_grades != 0 and add_or_stop_adding_grades != 1:
-        add_or_stop_adding_grades = int(input("error, if you want to add a grade to the system press 1 else press 0"))
+        # Create a buttons to open the "view all teachers" and "view all subjects" windows
+        tk.Button(self.root, text="View All Teachers", command=self.view_all_teachers).pack()
+        tk.Button(self.root, text="View All Subjects", command=self.view_all_subjects).pack()
 
-# start of MSH building ⤵⤵⤵⤵⤵⤵⤵ MSH = Maarehet SHaot (NOT a schedule!!!)
-for grade in grades_list:
+    def open_add_subject_window(self):
+        AddSubjectWindow(self.root)
 
-    for i in range(1, 7):  # build MSH day by day for every grade (every day for grade x then every day for grade y etc...)
+    def open_add_teacher_window(self):
+        AddTeacherWindow(self.root)
 
-        for subject in hours_per_subject:
-            hour = 0  # counter for current lesson tracking
-            same_subject_in_a_day = 0  # counter for max lessons of a specific subject in a single day
+    def open_add_grade_window(self):
+        AddGradeWindow(self.root)
 
-            while hours_per_subject[subject] > 0 and same_subject_in_a_day < [j for j in subjects_list if j.name == subject][0].hours_in_a_day:
-                hour += 1
-                same_subject_in_a_day += 1
-                available_teachers_of_subject = [j for j in teachers_list if j.subject == subject and j.work_hours[i][hour] > 0]
+    def view_all_teachers(self):
+        # Create a new window to display the list of teachers
+        view_window = tk.Toplevel(self.root)
+        view_window.title("All Subjects")
 
-                for j in available_teachers_of_subject:
-                    if j.work_hours[i][hour] > 0:
-                        grades_list[grades_list.index(grade)].change_hour(teachers_list[teachers_list.index(j)], i, hour, 'add')
-                        break
+        # Create a text widget to display the list of teachers
+        text_widget = tk.Text(view_window, height=10, width=40)
+        text_widget.pack()
+
+        # Populate the text widget with the list of teachers
+        for teacher in teachers_list:
+            text_widget.insert(tk.END, f"Teacher Name: {teacher.name}\n")
+            text_widget.insert(tk.END, f"Teacher Subject: {teacher.subject}\n")
+            text_widget.insert(tk.END, f"Teacher's Day Off: {teacher.work_hours.index([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1])+1}\n\n")
+
+    def view_all_subjects(self):
+        # Create a new window to display the list of teachers
+        view_window = tk.Toplevel(self.root)
+        view_window.title("All Teachers")
+
+        # Create a text widget to display the list of teachers
+        text_widget = tk.Text(view_window, height=10, width=40)
+        text_widget.pack()
+        # Populate the text widget with the list of teachers
+        for subject in subjects_list:
+            text_widget.insert(tk.END, f"Subject Name: {subject.name}\n")
+            text_widget.insert(tk.END, f"Max Hours Of Subject In A Day: {subject.max_hours_in_a_day}\n\n")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MainApplication(root)
+    root.mainloop()

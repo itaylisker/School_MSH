@@ -81,6 +81,7 @@ class AddSubjectWindow:
 
 class AddTeacherWindow:
     global teachers_list
+# TODO: teacher subject should be chosen from spinner, spinner gets values from database
 
     def __init__(self, parent):
         self.parent = parent

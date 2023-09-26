@@ -93,10 +93,10 @@ for grade in grades_list:
             hour = 0  # counter for current lesson tracking
             same_subject_in_a_day = 0  # counter for max lessons of a specific subject in a single day
 
-            while hours_per_subject[subject] > 0 and same_subject_in_a_day < [j for j in subjects_list if j.name == subject][0].max_hours_in_a_day:
+            while hours_per_subject[subject] > 0 and same_subject_in_a_day < [j for j in subjects_list if j.name == subject.name][0].max_hours_in_a_day:
                 hour += 1
                 same_subject_in_a_day += 1
-                available_teachers_of_subject = [j for j in teachers_list if j.subject == subject and j.work_hours[i][hour] > 0]
+                available_teachers_of_subject = [j for j in teachers_list if j.subject.name == subject.name and j.work_hours[i][hour] > 0]
 
                 for j in available_teachers_of_subject:
                     if j.work_hours[i][hour] > 0:

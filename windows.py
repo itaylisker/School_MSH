@@ -30,7 +30,7 @@ class LoginWindow(BaseWindow):
         password_entry = tk.Entry(self, show="*")  # Hide the password
         password_entry.pack()
 
-        login_button = tk.Button(self, text="Login", command=lambda: check_credentials(self, username_entry, password_entry))
+        login_button = tk.Button(self, text="Login", cursor='hand2', command=lambda: check_credentials(self, username_entry, password_entry))
         login_button.pack()
 
         self.mainloop()
@@ -55,7 +55,7 @@ class AddSubjectWindow:
         self.max_hours_entry.pack()
 
         # Create a button to add the subject
-        tk.Button(self.window, text="Add Subject", command=self.add_subject).pack()
+        tk.Button(self.window, text="Add Subject", cursor='hand2', command=self.add_subject).pack()
 
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -175,7 +175,7 @@ class MainApplication(BaseWindow):
         # Populate the text widget with the list of teachers
         for teacher in teachers_list:
             text_widget.insert(tk.END, f"Teacher Name: {teacher.name}\n")
-            text_widget.insert(tk.END, f"Teacher Subject: {teacher.subject}\n")
+            text_widget.insert(tk.END, f"Teacher Subject: {teacher.subject.name}\n")
             text_widget.insert(tk.END, f"Teacher's Day Off: {teacher.work_hours.index([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1])+1}\n\n")
 
     def view_all_subjects(self):

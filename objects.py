@@ -1,6 +1,13 @@
 # TODO: add a variable to Grade that indicates the max amount of hours the grade can study per day (separate fridays from weekdays).
 # TODO: add a variable to Teacher that indicates the max amount of hours the teacher can teach per day (separate fridays from weekdays).
 
+
+class Classroom:
+    def __init__(self, name: str, available: bool):
+        self.name = name
+        self.available = available
+
+
 class Subject:
     def __init__(self, name: str, max_hours_in_a_day: int):
         self.max_hours_in_a_day = max_hours_in_a_day
@@ -11,7 +18,7 @@ class Teacher:
 
     def __init__(self, name: str, subject: Subject):
         self.name = name
-        self.subject = subject.name
+        self.subject = subject
         # teachers don't work on hours that are marked as -1.
         # hours that are marked as 0 are hours when the teacher is teaching.
         # any other number is for priority reasons (1 higher priority than 2 ...)
@@ -41,33 +48,39 @@ class Teacher:
             self.work_hours[day - 1][hour] = 0  # is working
 
 
+class Lesson:
+    def __init__(self, hour: int, room: Classroom, teacher: Teacher):
+        self.hour = hour
+        self.room = room
+        self.teacher = teacher
+        self.subject = teacher.subject.name
+        room.available = False
+
+
 class Grade:
 
-    def __init__(self, name: str, hours_per_subject: dict):
+    def __init__(self, name: str, hours_per_subject: dict[Subject: int]):
         self.name = name
         self.hours_per_subject = hours_per_subject
-        self.MSH = []
+        self.MSH: list[list[Lesson]] = []
         for day in range(5):  # Sunday through wednesday
             default_day_schedule = [None for hour in range(12)]  # hours 0 through 11
             self.MSH.append(default_day_schedule)
         self.MSH.append([None, None, None, None, None, None, None, None])
 
-    def change_hour(self, teacher: Teacher, day: int, hour: int, action: str):
+    def change_hour(self, lesson: Lesson, day: int, hour: int, action: str):
 
         if action.lower == "remove":
             self.hours_per_subject[self.MSH[day - 1][hour].subject] += 1
-            teacher.work_hours[day - 1][hour] = 1  # priority
+            lesson.teacher.work_hours[day - 1][hour] = 1  # priority
             self.MSH[day - 1][hour] = None
 
         elif action.lower == "add":
-            self.MSH[day - 1][hour] = teacher
-            self.hours_per_subject[teacher.subject] -= 1
-            teacher.work_hours[day - 1][hour] = 0
+            self.MSH[day - 1][hour] = lesson
+            self.hours_per_subject[lesson.subject] -= 1
+            lesson.teacher.work_hours[day - 1][hour] = 0
         else:
             print('Invalid action')
         # if action.lower == "change":
         #     self.change_hour(teacher, day, hour, "remove")
         #     self.change_hour(teacher, day, hour, "add")
-
-
-

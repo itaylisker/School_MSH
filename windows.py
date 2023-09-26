@@ -1,12 +1,39 @@
 import tkinter as tk
 from tkinter import messagebox
-import teacher, grade, subject
+from objects import Teacher, Grade, Subject
+from client import check_credentials
+import db_handle
 
-hours_per_subject = {}
-subjects_list = []
-teachers_list = []
-grades_list = []
-DOW_list = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+
+class BaseWindow(tk.Tk):
+
+    def __init__(self, title, width=800, height=800):
+        super().__init__()
+        self.title(f'{title}')
+        self.geometry(f'{width}x{height}')
+
+
+class LoginWindow(BaseWindow):
+
+    def __init__(self):
+        super().__init__('Login')
+
+        username_label = tk.Label(self, text="Username:")
+        username_label.pack()
+
+        username_entry = tk.Entry(self)
+        username_entry.pack()
+
+        password_label = tk.Label(self, text="Password:")
+        password_label.pack()
+
+        password_entry = tk.Entry(self, show="*")  # Hide the password
+        password_entry.pack()
+
+        login_button = tk.Button(self, text="Login", command=lambda: check_credentials(self, username_entry, password_entry))
+        login_button.pack()
+
+        self.mainloop()
 
 
 class AddSubjectWindow:
@@ -14,7 +41,7 @@ class AddSubjectWindow:
 
     def __init__(self, parent):
         self.parent = parent
-        self.window = tk.Toplevel(parent)
+        self.window = tk.Toplevel(self.parent)
         self.window.title("Add Subject")
         self.parent.withdraw()  # Hide the parent window while this window is open
 
@@ -38,10 +65,10 @@ class AddSubjectWindow:
 
         if not subject_name or not max_hours:
             messagebox.showerror("Input Error", "Both fields must be filled.")
-        elif subject_name.lower() in [i.name for i in subjects_list]:
+        elif subject_name.lower() in [i.name for i in subjects_list]:  # TODO: should work with the database and not with a list
             messagebox.showerror("Input Error", "Subject Already Exists.")
         else:
-            new_sub = subject.Subject(subject_name.lower(), int(max_hours))
+            new_sub = Subject(subject_name.lower(), int(max_hours))
             subjects_list.append(new_sub)
             print(f"Subject Name: {subject_name}, Max Hours per Day: {max_hours}")
             self.window.destroy()  # Close the window
@@ -57,7 +84,7 @@ class AddTeacherWindow:
 
     def __init__(self, parent):
         self.parent = parent
-        self.window = tk.Toplevel(parent)
+        self.window = tk.Toplevel(self.parent)
         self.window.title("Add Teacher")
         self.parent.withdraw()  # Hide the parent window while this window is open
 
@@ -93,7 +120,7 @@ class AddTeacherWindow:
         elif teacher_name.lower() in [i.name for i in teachers_list]:
             messagebox.showerror("Input Error", "Teacher already exists.")
         else:
-            new_t = teacher.Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower()][0])
+            new_t = Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower()][0])
             new_t.cant_work(int(teacher_day_off), 0, 1)
             teachers_list.append(new_t)
             print(f"Teacher Name: {teacher_name}, Subject: {teacher_subject}, Day Off: {teacher_day_off}")
@@ -107,10 +134,11 @@ class AddTeacherWindow:
 
 class AddGradeWindow:
     global grades_list
+    # TODO: finish ADDGRADEWindow
 
     def __init__(self, parent):
         self.parent = parent
-        self.window = tk.Toplevel(parent)
+        self.window = tk.Toplevel(self.parent)
         self.window.title("Add Grade")
         self.parent.withdraw()  # Hide the parent window while this window is open
 
@@ -119,35 +147,25 @@ class AddGradeWindow:
         self.grade_name_entry.pack()
 
 
-class MainApplication:
+class MainApplication(BaseWindow):
     global teachers_list
     global subjects_list
 
-    def __init__(self, root):
-        self.root = root
-        self.root.title("High School Schedule Organizer")
+    def __init__(self):
+        super().__init__('SSB - School Schedule Builder')
 
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
-        tk.Button(self.root, text="Add Subject", command=self.open_add_subject_window).pack()
-        tk.Button(self.root, text="Add Teacher", command=self.open_add_teacher_window).pack()
-        tk.Button(self.root, text="Add Grade", command=self.open_add_grade_window).pack()
+        tk.Button(self, text="Add Subject", command=lambda: AddSubjectWindow(self)).pack()
+        tk.Button(self, text="Add Teacher", command=lambda: AddTeacherWindow(self)).pack()
+        tk.Button(self, text="Add Grade", command=lambda: AddGradeWindow(self)).pack()
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows
-        tk.Button(self.root, text="View All Teachers", command=self.view_all_teachers).pack()
-        tk.Button(self.root, text="View All Subjects", command=self.view_all_subjects).pack()
-
-    def open_add_subject_window(self):
-        AddSubjectWindow(self.root)
-
-    def open_add_teacher_window(self):
-        AddTeacherWindow(self.root)
-
-    def open_add_grade_window(self):
-        AddGradeWindow(self.root)
+        tk.Button(self, text="View All Teachers", command=self.view_all_teachers).pack()
+        tk.Button(self, text="View All Subjects", command=self.view_all_subjects).pack()
 
     def view_all_teachers(self):
         # Create a new window to display the list of teachers
-        view_window = tk.Toplevel(self.root)
+        view_window = tk.Toplevel(self)
         view_window.title("All Subjects")
 
         # Create a text widget to display the list of teachers
@@ -162,7 +180,7 @@ class MainApplication:
 
     def view_all_subjects(self):
         # Create a new window to display the list of teachers
-        view_window = tk.Toplevel(self.root)
+        view_window = tk.Toplevel(self)
         view_window.title("All Teachers")
 
         # Create a text widget to display the list of teachers
@@ -172,9 +190,3 @@ class MainApplication:
         for subject in subjects_list:
             text_widget.insert(tk.END, f"Subject Name: {subject.name}\n")
             text_widget.insert(tk.END, f"Max Hours Of Subject In A Day: {subject.max_hours_in_a_day}\n\n")
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = MainApplication(root)
-    root.mainloop()

@@ -1,6 +1,4 @@
-import grade
-import teacher
-import subject
+from objects import Grade ,Teacher, Subject
 hours_per_subject = {}
 subjects_list = []
 teachers_list = []
@@ -14,7 +12,7 @@ while add_or_stop_adding_subjects != 0 and add_or_stop_adding_subjects != 1:
 while add_or_stop_adding_subjects != 0:
     subject_name = input("enter the teacher's name")
     subject_hours_in_a_day = int(input("enter the amount of hours that this subject can be taught in a single day: "))
-    new_sub = subject.Subject(subject_name.lower(), subject_hours_in_a_day)
+    new_sub = Subject(subject_name.lower(), subject_hours_in_a_day)
     subjects_list.append(new_sub)
 
     add_or_stop_adding_subjects = int(input("if you want to add a teacher to the system press 1 else press 0"))
@@ -28,7 +26,7 @@ while add_or_stop_adding_teachers != 0 and add_or_stop_adding_teachers != 1:
 while add_or_stop_adding_teachers != 0:
     teacher_name = input("enter the teacher's name")
     teacher_subject = input("enter the teacher's subject")
-    new_t = teacher.Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower][0])
+    new_t = Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower][0].name)
     teachers_list.append(new_t)
 
     for i in DOW_list:
@@ -77,7 +75,7 @@ while add_or_stop_adding_grades != 0:
                 hours_for_subject = int(input(f"input was invalid, please try again: "))
         hours_per_subject[i] = hours_for_subject
 
-    new_g = grade.Grade(grade_name, hours_per_subject)
+    new_g = Grade(grade_name, hours_per_subject)
     grades_list.append(new_g)
 
     add_or_stop_adding_grades = int(input("if you want to add a grade to the system press 1 else press 0"))
@@ -96,7 +94,7 @@ for grade in grades_list:
             while hours_per_subject[subject] > 0 and same_subject_in_a_day < [j for j in subjects_list if j.name == subject.name][0].max_hours_in_a_day:
                 hour += 1
                 same_subject_in_a_day += 1
-                available_teachers_of_subject = [j for j in teachers_list if j.subject.name == subject.name and j.work_hours[i][hour] > 0]
+                available_teachers_of_subject = [j for j in teachers_list if j.subject == subject.name and j.work_hours[i][hour] > 0]
 
                 for j in available_teachers_of_subject:
                     if j.work_hours[i][hour] > 0:

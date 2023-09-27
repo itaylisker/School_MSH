@@ -3,9 +3,10 @@
 
 
 class Classroom:
-    def __init__(self, name: str, available: bool):
+    def __init__(self, name: str, hours_per_day: int, hours_per_friday: int):
         self.name = name
-        self.available = available
+        self.available: list[list[bool]] = [[True for i in range(hours_per_day)] for day in range(5)]
+        self.available.append([True for i in range(hours_per_friday)])
 
 
 class Subject:
@@ -16,14 +17,13 @@ class Subject:
 
 class Teacher:
 
-    def __init__(self, name: str, subject: Subject):
+    def __init__(self, name: str, subject: str):
         self.name = name
         self.subject = subject
         # teachers don't work on hours that are marked as -1.
         # hours that are marked as 0 are hours when the teacher is teaching.
         # any other number is for priority reasons (1 higher priority than 2 ...)
-        self.work_hours = [[2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3]
-                           for day in range(5)]
+        self.work_hours = [[2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3] for day in range(5)]
         self.work_hours.append([2, 1, 1, 1, 1, 2, 2, 3, -1, -1, -1, -1])  # friday work hours
 
     def cant_work(self, day, hour, flag):
@@ -49,17 +49,18 @@ class Teacher:
 
 
 class Lesson:
-    def __init__(self, hour: int, room: Classroom, teacher: Teacher):
+    def __init__(self, hour: int, day: int, room: Classroom, teacher: Teacher):
         self.hour = hour
+        self.day = day
         self.room = room
         self.teacher = teacher
-        self.subject = teacher.subject.name
-        room.available = False
+        self.subject = teacher.subject
+        room.available[day][hour] = False
 
 
 class Grade:
 
-    def __init__(self, name: str, hours_per_subject: dict[Subject: int]):
+    def __init__(self, name: str, hours_per_subject: dict[str: int]):  # dict consists of subject_name: hours_to_study_per_week
         self.name = name
         self.hours_per_subject = hours_per_subject
         self.MSH: list[list[Lesson]] = []
@@ -74,11 +75,13 @@ class Grade:
             self.hours_per_subject[self.MSH[day - 1][hour].subject] += 1
             lesson.teacher.work_hours[day - 1][hour] = 1  # priority
             self.MSH[day - 1][hour] = None
+            lesson.room.available[day][hour] = True
 
         elif action.lower == "add":
             self.MSH[day - 1][hour] = lesson
             self.hours_per_subject[lesson.subject] -= 1
             lesson.teacher.work_hours[day - 1][hour] = 0
+            lesson.room.available[day][hour] = False
         else:
             print('Invalid action')
         # if action.lower == "change":

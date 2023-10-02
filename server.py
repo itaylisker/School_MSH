@@ -1,5 +1,4 @@
 import socket
-import os
 from db_handle import check_credentials
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET =Ipv4 | SOCK_STREAM- TCP

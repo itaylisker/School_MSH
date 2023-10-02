@@ -28,8 +28,8 @@ def check_credentials(window, username_entry, password_entry):
     client_socket.send(credentials.encode())
     cred_check = client_socket.recv(1024).decode()
 
-    if cred_check == 'true':
-        windows.MainApplication()
+    if cred_check == 'admin':
+        windows.MainApplicationAdmin()
         window.destroy()
     elif cred_check == 'Invalid username':
         messagebox.showerror("Login Failed", "username doesn't exist")

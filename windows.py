@@ -3,7 +3,7 @@ from tkinter import messagebox
 from objects import Teacher, Grade, Subject
 from client import check_credentials
 import db_handle
-
+# TODO: everything relating to the database should be dealt with in the server file (import socket instead of db_handle)
 
 class BaseWindow(tk.Tk):
 
@@ -37,7 +37,6 @@ class LoginWindow(BaseWindow):
 
 
 class AddSubjectWindow:
-    global subjects_list
 
     def __init__(self, parent):
         self.parent = parent
@@ -60,16 +59,15 @@ class AddSubjectWindow:
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def add_subject(self):
-        subject_name = self.subject_name_entry.get()
+        subject_name = self.subject_name_entry.get().title()
         max_hours = self.max_hours_entry.get()
 
         if not subject_name or not max_hours:
             messagebox.showerror("Input Error", "Both fields must be filled.")
-        elif subject_name.lower() in [i.name for i in subjects_list]:  # TODO: should work with the database and not with a list
+        elif db_handle.select_data('subjects', 'id', f'name = {subject_name}'):
             messagebox.showerror("Input Error", "Subject Already Exists.")
         else:
-            new_sub = Subject(subject_name.lower(), int(max_hours))
-            subjects_list.append(new_sub)
+            db_handle.insert_data('subjects', 'name, max_hours_per_day', (subject_name, max_hours))
             print(f"Subject Name: {subject_name}, Max Hours per Day: {max_hours}")
             self.window.destroy()  # Close the window
             self.parent.deiconify()  # Show the parent window again
@@ -82,6 +80,8 @@ class AddSubjectWindow:
 class AddTeacherWindow:
     global teachers_list
 # TODO: teacher subject should be chosen from spinner, spinner gets values from database
+# TODO: teacher day off should be chosen from spinner, spinner values are 1-6
+# TODO: finish connecting everything to the database
 
     def __init__(self, parent):
         self.parent = parent
@@ -108,22 +108,19 @@ class AddTeacherWindow:
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def add_teacher(self):
-        teacher_name = self.teacher_name_entry.get()
-        teacher_subject = self.teacher_subject_entry.get()
+        teacher_name = self.teacher_name_entry.get().title()
+        teacher_subject = self.teacher_subject_entry.get().title()
         teacher_day_off = self.teacher_day_off_entry.get()
 
         if not teacher_name or not teacher_subject or not teacher_day_off:
             messagebox.showerror("Input Error", "All fields must be filled.")
-        elif not teacher_day_off.isdigit() or int(teacher_day_off) < 1 or int(teacher_day_off) > 6:
-            messagebox.showerror("Input Error", "Teacher's day off must be a number between 1 and 6.")
-        elif teacher_subject.lower() not in [i.name for i in subjects_list]:
-            messagebox.showerror("Input Error", "Subject does not exist, please add it using the add subject button first.")
-        elif teacher_name.lower() in [i.name for i in teachers_list]:
+        elif db_handle.select_data('users', 'id', f'name = {teacher_name} AND is_teacher = true'):
             messagebox.showerror("Input Error", "Teacher already exists.")
         else:
             new_t = Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower()][0])
             new_t.cant_work(int(teacher_day_off), 0, 1)
             teachers_list.append(new_t)
+            # db_handle.insert_data('users', 'name, sub_id, work_hours, is_teacher, password', (teacher_name, max_hours))
             print(f"Teacher Name: {teacher_name}, Subject: {teacher_subject}, Day Off: {teacher_day_off}")
             self.window.destroy()  # Close the window
             self.parent.deiconify()  # Show the parent window again
@@ -148,12 +145,12 @@ class AddGradeWindow:
         self.grade_name_entry.pack()
 
 
-class MainApplication(BaseWindow):
+class MainApplicationAdmin(BaseWindow):
     global teachers_list
     global subjects_list
 
     def __init__(self):
-        super().__init__('SSB - School Schedule Builder')
+        super().__init__('SSM - School Schedule Manager')
 
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
         tk.Button(self, text="Add Subject", command=lambda: AddSubjectWindow(self)).pack()

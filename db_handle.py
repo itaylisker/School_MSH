@@ -2,42 +2,37 @@
 import psycopg2
 from common import encode_password
 
-# TODO: figure out database structure and how to store complete schedules and different objects in it
-# TODO: build database (complete Grades Table)
+conn = psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
+cursor = conn.cursor()
 
 
-def create_database(curs):
+def insert_data(table: str, columns: str, data: tuple):
+    values_tuple = ','.join(['%s' for value in data])
+    try:
+        cursor.execute(f'''INSERT INTO public.{table}({columns}) VALUES ({values_tuple});''', data)
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-    curs.execute('''CREATE TABLE IF NOT EXISTS users (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        username text UNIQUE,
-        password text
-    )''')
 
-    curs.execute('''CREATE TABLE IF NOT EXISTS Classrooms (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            Class text unique
-            Available boolean[][]
-    )''')
+def delete_data(table: str, where: str):
+    try:
+        cursor.execute(f'''DELETE FROM public.{table} WHERE {where};''')
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-    curs.execute('''CREATE TABLE IF NOT EXISTS Subjects (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name text unique
-                max_hours_in_a_day integer
-    )''')
 
-    curs.execute('''CREATE TABLE IF NOT EXISTS teachers (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name text
-                subject text
-                work_hours boolean[][]
-    )''')
-
-    curs.execute('''CREATE TABLE IF NOT EXISTS Grades (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name text
-                
-    )''')
+def select_data(table: str, select: str, where: str = None):
+    try:
+        if where:
+            cursor.execute(f'''SELECT {select} FROM public.{table} WHERE {where};''')
+            return cursor.fetchall()
+        else:
+            cursor.execute(f'''SELECT {select} FROM public.{table};''')
+            return cursor.fetchall()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
 
 def check_credentials(username, password):
@@ -47,28 +42,11 @@ def check_credentials(username, password):
         if user[1] != username:
             return 'Invalid username'
 
-        elif user[2] == password:
-            return 'true'
+        elif user[5] == password:
+            if user[4]:
+                return 'true'
+            return 'admin'
         else:
             return 'Invalid password'
     else:
         return 'one or more of the fields are empty'
-
-
-conn = psycopg2.connect(host='127.0.0.1', database="SSM", user='postgres', password='1098qpoi')
-cursor = conn.cursor()
-# Create a table for user credentials
-# TODO: complete Lesson TYPE
-cursor.execute('''
-CREATE TYPE Lesson AS(
-        Hour integer
-        day integer
-        
-)''')
-create_database(cursor)
-
-# Add some sample users
-cursor.execute("INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)", ("admin", encode_password("admin")))
-cursor.execute("INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)", ("itay", encode_password("lisker")))
-
-conn.commit()

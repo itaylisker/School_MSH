@@ -1,4 +1,5 @@
 from objects import Grade ,Teacher, Subject
+import db_handle
 hours_per_subject = {}
 subjects_list = []
 teachers_list = []

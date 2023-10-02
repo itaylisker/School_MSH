@@ -3,7 +3,9 @@ from tkinter import messagebox
 from objects import Teacher, Grade, Subject
 from client import check_credentials
 import db_handle
-# TODO: everything relating to the database should be dealt with in the server file (import socket instead of db_handle)
+# TODO: everything relating to the database should be dealt with in the server file (import socket instead of db_handle here)
+# TODO: finish integrating the database into the code
+
 
 class BaseWindow(tk.Tk):
 
@@ -81,7 +83,7 @@ class AddTeacherWindow:
     global teachers_list
 # TODO: teacher subject should be chosen from spinner, spinner gets values from database
 # TODO: teacher day off should be chosen from spinner, spinner values are 1-6
-# TODO: finish connecting everything to the database
+
 
     def __init__(self, parent):
         self.parent = parent
@@ -120,7 +122,7 @@ class AddTeacherWindow:
             new_t = Teacher(teacher_name.lower(), [i for i in subjects_list if i.name == teacher_subject.lower()][0])
             new_t.cant_work(int(teacher_day_off), 0, 1)
             teachers_list.append(new_t)
-            # db_handle.insert_data('users', 'name, sub_id, work_hours, is_teacher, password', (teacher_name, max_hours))
+# db_handle.insert_data('users', 'name, sub_id, work_hours, is_teacher, password', (teacher_name, max_hours))
             print(f"Teacher Name: {teacher_name}, Subject: {teacher_subject}, Day Off: {teacher_day_off}")
             self.window.destroy()  # Close the window
             self.parent.deiconify()  # Show the parent window again

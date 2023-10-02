@@ -9,14 +9,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(('127.0.0.1', 5050))
 
 LOGIN_INFO = 'Login'
-
-# TODO: lists below this line should be stored in database
-hours_per_subject = {}
-subjects_list = []
-teachers_list = []
-grades_list = []
-DOW_list = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-
+# TODO: Add Enum like the one above
 
 # Function to check login credentials
 def check_credentials(window, username_entry, password_entry):

@@ -5,7 +5,7 @@ from common import encode_password
 conn = psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
 cursor = conn.cursor()
 
-# TODO: fix every function that has a 'where' in it
+
 def insert_data(table: str, columns: str, data: tuple):
     values_tuple = ','.join(['%s' for value in data])
     try:
@@ -13,20 +13,35 @@ def insert_data(table: str, columns: str, data: tuple):
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
+        print(f'''INSERT INTO public.{table}({columns}) VALUES ({values_tuple});''' % data)
 
 
-def delete_data(table: str, where: str):
+def delete_data(table: str, where: dict):
     try:
-        cursor.execute(f'''DELETE FROM public.{table} WHERE {where};''')
+        s = ''
+        for i in where.keys():
+            if i == 'AND':
+                s += ' AND'
+            else:
+                s += f'{i}=%s'
+        data = tuple([i for i in where.values() if i])
+        cursor.execute(f'''DELETE FROM public.{table} WHERE {s};''', data)
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
 
-def select_data(table: str, select: str, where: str = None):
+def select_data(table: str, select: str, where: dict = None):
     try:
         if where:
-            cursor.execute(f'''SELECT {select} FROM public.{table} WHERE {where};''')
+            s = ''
+            for i in where.keys():
+                if i == 'AND':
+                    s += ' AND'
+                else:
+                    s += f'{i}=%s'
+            data = tuple([i for i in where.values()])
+            cursor.execute(f'''SELECT {select} FROM public.{table} WHERE {s};''', data)
             return cursor.fetchall()
         else:
             cursor.execute(f'''SELECT {select} FROM public.{table};''')
@@ -36,15 +51,20 @@ def select_data(table: str, select: str, where: str = None):
 
 
 def check_credentials(username, password):
-    user = select_data('users', '*', f'name = {username}')
+    user = select_data('users', '*', {'name': username})
 
     if user:
         user = user[0]
-        if user[1] != username:
+        print (f'''{user} 
+{username not in user}
+{password in user}
+{True in user}''')
+        if username not in user:
             return 'Invalid username'
 
-        elif user[5] == password:
-            if user[4]:
+        elif password in user:
+            print('got here')
+            if (True in user) and (1 not in user):
                 return 'true'
             return 'admin'
         else:

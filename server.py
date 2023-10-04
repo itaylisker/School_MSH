@@ -15,11 +15,12 @@ def login(data, client):
     username = data[1]
     password = data[2]
     client.send(check_credentials(username, password).encode())
+    print(check_credentials(username, password))
 
 
 def add_subject(data, client):
     from db_handle import select_data, insert_data
-    if select_data('subjects', 'id', f'name = {data[1]}'):
+    if select_data('subjects', 'id', {'name': data[1]}):
         client.send(b'exists')
     else:
         insert_data('subjects', 'name, max_hours_per_day', (data[1], data[2]))
@@ -32,8 +33,8 @@ def get_and_send_subjects(client):
     if subjects:
         with open('subjects.json', 'w') as f:
             json.dump(subjects, f)
-        file_size = os.path.getsize('subjects.json')
-        client.send(bin(file_size))
+        file_size = str(os.path.getsize('subjects.json'))
+        client.send(file_size.encode())
         with open('subjects.json', 'rb') as f:
             client.send(f.read())
     else:
@@ -42,13 +43,20 @@ def get_and_send_subjects(client):
 
 def add_teacher(data, client):
     from db_handle import select_data, insert_data
-    if select_data('users', 'id', f'name = {data[1]} AND is_teacher = true'):
+    if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
         client.send(b'exists')
     else:
-        work_hours = [[True for i in range(data[4])] for day in range(5)]
-        work_hours.append([True for i in range(data[5])])
-        work_hours[data[3]] = [False for i in range(len(work_hours[data[3]]))]
-        insert_data('users', 'name, sub_id, work_hours, is_teacher, password', (data[1], data[2], work_hours, True, data[6]))
+        work_hours = [[True for i in range(int(data[4]))] for day in range(5)]
+        work_hours.append([True for i in range(int(data[5]))])
+        work_hours[int(data[3])-1] = [False for i in range(len(work_hours[int(data[3])-1]))]
+
+        with open('work_hours.json', 'w') as f:
+            json.dump(work_hours, f)
+
+        with open('work_hours.json', 'r') as f:
+            work_hours_json = f.read()
+
+        insert_data('users', 'name, is_teacher, password, work_hours_json, subject_id', (data[1], 'true', data[6], work_hours_json, data[2]))
         client.send(b'success')
 
 

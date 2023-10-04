@@ -68,7 +68,10 @@ def get_subjects():
         return 'no subjects found'
     else:
         subjects = json.loads(client_socket.recv(int(file_size)).decode())  # Convert json string to list[list]
-        return subjects
+        subjects_dict = {}
+        for subject in subjects:
+            subjects_dict[subject[0]] = subject[1]
+        return subjects_dict
 
 
 def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, teacher_day_off_number, teacher_max_hours_day_entry, teacher_max_hours_friday_entry, window, parent):
@@ -77,10 +80,17 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
     teacher_max_hours_day = int(teacher_max_hours_day_entry.get())
     teacher_max_hours_friday = int(teacher_max_hours_friday_entry.get())
 
+    print(f'''{teacher_name} , 
+                    {teacher_subject_id} , 
+                    {teacher_day_off} , 
+                    {teacher_max_hours_day} , 
+                    {teacher_max_hours_friday}''')
+
     if not (teacher_name and teacher_subject_id and teacher_day_off and teacher_max_hours_day and teacher_max_hours_friday):
         messagebox.showerror("Input Error", "All fields must be filled.")
+
     else:
-        teacher = f'{ADD_TEACHER},{teacher_name},{teacher_subject_id},{teacher_day_off},{teacher_max_hours_day},{teacher_max_hours_friday},{teacher_password_entry}'
+        teacher = f'{ADD_TEACHER},{teacher_name},{teacher_subject_id},{teacher_day_off},{teacher_max_hours_day},{teacher_max_hours_friday},{encode_password(teacher_password_entry.get())}'
         client_socket.send(teacher.encode())
         response = client_socket.recv(1024).decode()
         if response == 'exists':

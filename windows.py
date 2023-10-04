@@ -11,11 +11,11 @@ class BaseWindow(tk.Tk):
         self.geometry(f'{width}x{height}')
 
 
-class BaseChildWindow(tk.Toplevel):
+class BaseChildWindow:
     def __init__(self, parent, title):
         self.parent = parent
-        self.window = super().__init__(self.parent)
-        self.window.title = title
+        self.window = tk.Toplevel(self.parent)
+        self.window.title(f'{title}')
         self.parent.withdraw()
 
 
@@ -45,7 +45,7 @@ class LoginWindow(BaseWindow):
 class AddSubjectWindow(BaseChildWindow):
 
     def __init__(self, parent):
-        super().__init__(parent, 'Add Subject')
+        super().__init__(parent=parent, title='Add Subject')
 
         # Create labels and entry fields
         tk.Label(self.window, text="Enter Subject Name:").pack()
@@ -85,19 +85,17 @@ class AddTeacherWindow(BaseChildWindow):
         tk.Label(self.window, text="Enter Teacher Subject:").pack()
         scrollbar = tk.Scrollbar(self.window)
         scrollbar.pack(side='right', fill='y')
-        self.teacher_subject_Listbox = tk.Listbox(self.window, selectmode='single', yscrollcommand=scrollbar.set)
-        subjects = client.get_subjects()
+        self.teacher_subject_listbox = tk.Listbox(self.window, selectmode='single', yscrollcommand=scrollbar.set)
+        subjects: dict[int: str] | str = client.get_subjects()
         if subjects != 'no subjects found':
-            subjects_dict = {}
-            for e, i in enumerate(subjects):
-                self.teacher_subject_Listbox.insert(e, i[1])
-                subjects_dict[str(i[0])] = i[1]
-            self.teacher_subject_Listbox.pack(side='left', fill='both')
-            scrollbar.config(command=self.teacher_subject_Listbox.yview)
+            for e, i in enumerate(subjects.values()):
+                self.teacher_subject_listbox.insert(e, i)
+            self.teacher_subject_listbox.pack(side='left', fill='both')
+            scrollbar.config(command=self.teacher_subject_listbox.yview)
 
             tk.Label(self.window, text="Enter Teacher's Day Off (1-6):").pack()
             dow_list = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-            var = tk.StringVar()
+            var = tk.StringVar(self.window)
             self.teacher_day_off_spinbox = tk.Spinbox(self.window, textvariable=var, value=dow_list, increment=2, width=10, font=('sans-serif', 18),)
             self.teacher_day_off_spinbox.pack()
 
@@ -114,7 +112,7 @@ class AddTeacherWindow(BaseChildWindow):
                       command=lambda: client.add_teacher(
                           self.teacher_name_entry,
                           self.teacher_password_entry,
-                          self.get_selected_item_id(subjects_dict),
+                          self.get_selected_item_id(subjects),
                           dow_list.index(var.get()),
                           self.teacher_max_hours_day_entry,
                           self.teacher_max_hours_friday_entry,
@@ -127,10 +125,12 @@ class AddTeacherWindow(BaseChildWindow):
             self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def get_selected_item_id(self, subjects_dict):
-        selected_indices = self.teacher_subject_Listbox.curselection()
+        selected_indices = self.teacher_subject_listbox.curselection()
         if selected_indices:
             selected_index = selected_indices[0]
-            return subjects_dict.get(self.teacher_subject_Listbox.get(selected_index))
+            value = self.teacher_subject_listbox.get(selected_index)
+            key = [k for k in subjects_dict if subjects_dict[k] == value][0]
+            return key
 
     def on_closing(self):
         self.parent.deiconify()  # Show the parent window again
@@ -157,8 +157,8 @@ class MainApplicationAdmin(BaseWindow):
         super().__init__('SSM - School Schedule Manager')
 
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
-        tk.Button(self, text="Add Subject", command=lambda: AddSubjectWindow(self)).pack()
-        tk.Button(self, text="Add Teacher", command=lambda: AddTeacherWindow(self)).pack()
+        tk.Button(self, text="Add Subject", command=lambda: AddSubjectWindow(parent=self)).pack()
+        tk.Button(self, text="Add Teacher", command=lambda: AddTeacherWindow(parent=self)).pack()
 # tk.Button(self, text="Add Grade", command=lambda: AddGradeWindow(self)).pack()
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows

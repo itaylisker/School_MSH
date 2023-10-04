@@ -5,7 +5,7 @@ from common import encode_password
 conn = psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
 cursor = conn.cursor()
 
-
+# TODO: fix every function that has a 'where' in it
 def insert_data(table: str, columns: str, data: tuple):
     values_tuple = ','.join(['%s' for value in data])
     try:
@@ -36,9 +36,10 @@ def select_data(table: str, select: str, where: str = None):
 
 
 def check_credentials(username, password):
-    cursor.execute("SELECT * FROM users WHERE username=?", (username,))
-    user = cursor.fetchone()
+    user = select_data('users', '*', f'name = {username}')
+
     if user:
+        user = user[0]
         if user[1] != username:
             return 'Invalid username'
 

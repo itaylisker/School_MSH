@@ -84,6 +84,7 @@ while add_or_stop_adding_grades != 0:
         add_or_stop_adding_grades = int(input("error, if you want to add a grade to the system press 1 else press 0"))
 
 # start of MSH building ⤵⤵⤵⤵⤵⤵⤵ MSH = Maarehet SHaot (NOT a schedule!!!)
+# TODO: build MSH grade by grade for every day (sunday schedule for every grade then monday schedule for every grade...)
 for grade in grades_list:
 
     for i in range(1, 7):  # build MSH day by day for every grade (every day for grade x then every day for grade y etc...)

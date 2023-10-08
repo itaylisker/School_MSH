@@ -24,7 +24,8 @@ def add_subject(data, client):
         client.send(b'exists')
     else:
         insert_data('subjects', 'name, max_hours_per_day', (data[1], data[2]))
-        client.send(b'success')
+        new_sub_id = str(select_data('subjects', 'id', {'name': data[1]})[0][0])
+        client.send(new_sub_id.encode())
 
 
 def get_and_send_subjects(client):
@@ -57,7 +58,8 @@ def add_teacher(data, client):
             work_hours_json = f.read()
 
         insert_data('users', 'name, is_teacher, password, work_hours_json, subject_id', (data[1], 'true', encode_password(data[6]), work_hours_json, data[2]))
-        client.send(b'success')
+        new_teacher_id = str(select_data('users', 'id', {'name': data[1]})[0][0])
+        client.send(new_teacher_id.encode())
 
 
 def get_and_send_teachers(client):

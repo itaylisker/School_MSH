@@ -41,7 +41,7 @@ def check_credentials(window, username_entry, password_entry):
         password_entry.delete(0, 'end')
 
 
-def add_subject(subject_name_entry, max_hours_entry, window, parent):
+def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
     subject_name = subject_name_entry.get().title()
     max_hours = max_hours_entry.get()
 
@@ -56,9 +56,12 @@ def add_subject(subject_name_entry, max_hours_entry, window, parent):
             subject_name_entry.delete(0, 'end')
             max_hours_entry.delete(0, 'end')
         else:
-            messagebox.showinfo('successfully added', 'Subject Added Successfully')
-            window.destroy()  # Close the window
-            parent.deiconify()  # Show the parent window again
+            try:
+                subjects[int(response)] = Subject(subject_name, max_hours)
+            finally:
+                messagebox.showinfo('successfully added', 'Subject Added Successfully')
+                window.destroy()  # Close the window
+                parent.deiconify()  # Show the parent window again
 
 
 def get_subjects():
@@ -75,7 +78,7 @@ def get_subjects():
         return subjects_dict
 
 
-def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, teacher_day_off_number, teacher_max_hours_day_entry, teacher_max_hours_friday_entry, window, parent):
+def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, teacher_day_off_number, teacher_max_hours_day_entry, teacher_max_hours_friday_entry, window, parent, teachers, subjects):
     teacher_name = teacher_name_entry.get().title()
     teacher_day_off = teacher_day_off_number+1
     teacher_max_hours_day = int(teacher_max_hours_day_entry.get())
@@ -97,9 +100,16 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
         if response == 'exists':
             messagebox.showerror("Input Error", "Teacher With This Name already exists.")
         else:
-            messagebox.showinfo('successfully added', 'Teacher Added Successfully')
-            window.destroy()  # Close the window
-            parent.deiconify()  # Show the parent window again
+            data = teacher.split(',')
+            work_hours = [[True for i in range(int(data[4]))] for day in range(5)]
+            work_hours.append([True for i in range(int(data[5]))])
+            work_hours[int(data[3]) - 1] = [False for i in range(len(work_hours[int(data[3]) - 1]))]
+            try:
+                teachers[int(response)] = Teacher(teacher_name, subjects[teacher_subject_id].name, work_hours)
+            finally:
+                messagebox.showinfo('successfully added', 'Teacher Added Successfully')
+                window.destroy()  # Close the window
+                parent.deiconify()  # Show the parent window again
 
 
 def get_teachers():

@@ -48,6 +48,7 @@ class LoginWindow(BaseWindow):
 class AddSubjectWindow(BaseChildWindow):
 
     def __init__(self, parent):
+        global subjects
         super().__init__(parent=parent, title='Add Subject')
 
         # Create labels and entry fields
@@ -62,7 +63,7 @@ class AddSubjectWindow(BaseChildWindow):
         # Create a button to add the subject
         tk.Button(self.window, text="Add Subject", cursor='hand2',
                   command=lambda:
-                  client.add_subject(self.subject_name_entry, self.max_hours_entry, self.window, self.parent)).pack()
+                  client.add_subject(self.subject_name_entry, self.max_hours_entry, self.window, self.parent, subjects)).pack()
 
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -75,6 +76,7 @@ class AddTeacherWindow(BaseChildWindow):
 
     def __init__(self, parent):
         global subjects
+        global teachers
         super().__init__(parent, 'Add Teacher')
 
         # Create labels and entry fields
@@ -126,7 +128,9 @@ class AddTeacherWindow(BaseChildWindow):
                           self.teacher_max_hours_day_entry,
                           self.teacher_max_hours_friday_entry,
                           self.window,
-                          self.parent
+                          self.parent,
+                          teachers,
+                          subjects
                           )).pack())
 
             self.window.protocol("WM_DELETE_WINDOW", self.on_closing)

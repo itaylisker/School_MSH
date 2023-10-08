@@ -31,7 +31,7 @@ def delete_data(table: str, where: dict):
         print(error)
 
 
-def select_data(table: str, select: str, where: dict = None):
+def select_data(From: str, select: str, where: dict = None):
     try:
         if where:
             s = ''
@@ -41,10 +41,10 @@ def select_data(table: str, select: str, where: dict = None):
                 else:
                     s += f'{i}=%s'
             data = tuple([i for i in where.values()])
-            cursor.execute(f'''SELECT {select} FROM public.{table} WHERE {s};''', data)
+            cursor.execute(f'''SELECT {select} FROM public.{From} WHERE {s};''', data)
             return cursor.fetchall()
         else:
-            cursor.execute(f'''SELECT {select} FROM public.{table};''')
+            cursor.execute(f'''SELECT {select} FROM public.{From};''')
             return cursor.fetchall()
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
@@ -55,15 +55,11 @@ def check_credentials(username, password):
 
     if user:
         user = user[0]
-        print (f'''{user} 
-{username not in user}
-{password in user}
-{True in user}''')
+
         if username not in user:
             return 'Invalid username'
 
-        elif password in user:
-            print('got here')
+        elif encode_password(password) in user:
             if (True in user) and (1 not in user):
                 return 'true'
             return 'admin'

@@ -7,18 +7,17 @@ class Classroom:
 
 class Subject:
     def __init__(self, name: str, max_hours_in_a_day: int):
-        self.max_hours_in_a_day = max_hours_in_a_day
         self.name = name
+        self.max_hours_in_a_day = max_hours_in_a_day
 
 
 class Teacher:
 
-    def __init__(self, name: str, subject: str, max_hours_per_day: int, max_hours_per_friday: int):
+    def __init__(self, name: str, subject: str, work_hours: list[list[bool]]):
         self.name = name
         self.subject = subject
         # if value is True than the teacher is available, if it's False the teacher is occupied
-        self.work_hours = [[True for i in range(max_hours_per_day)] for day in range(5)]
-        self.work_hours.append([True for i in range(max_hours_per_friday)])  # friday work hours
+        self.work_hours = work_hours
 
     def cant_work(self, day, hour, flag):
         if flag == 1:

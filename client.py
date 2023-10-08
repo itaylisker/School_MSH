@@ -1,6 +1,6 @@
 from tkinter import messagebox
 from objects import Teacher, Grade, Subject
-from common import encode_password
+
 import windows
 import socket
 import json
@@ -11,13 +11,14 @@ LOGIN_INFO = 'Login'
 ADD_SUBJECT = 'add_subject'
 GET_SUBJECTS = 'get_subjects'
 ADD_TEACHER = 'add_teacher'
+GET_TEACHERS = 'get_teachers'
 
 
 # Function to check login credentials
 def check_credentials(window, username_entry, password_entry):
 
     username = username_entry.get()
-    password = encode_password(password_entry.get())
+    password = password_entry.get()
     credentials = f'{LOGIN_INFO},{username},{password}'
 
     client_socket.send(credentials.encode())
@@ -70,7 +71,7 @@ def get_subjects():
         subjects = json.loads(client_socket.recv(int(file_size)).decode())  # Convert json string to list[list]
         subjects_dict = {}
         for subject in subjects:
-            subjects_dict[subject[0]] = subject[1]
+            subjects_dict[subject[0]] = Subject(subject[1], subject[2])
         return subjects_dict
 
 
@@ -90,7 +91,7 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
         messagebox.showerror("Input Error", "All fields must be filled.")
 
     else:
-        teacher = f'{ADD_TEACHER},{teacher_name},{teacher_subject_id},{teacher_day_off},{teacher_max_hours_day},{teacher_max_hours_friday},{encode_password(teacher_password_entry.get())}'
+        teacher = f'{ADD_TEACHER},{teacher_name},{teacher_subject_id},{teacher_day_off},{teacher_max_hours_day},{teacher_max_hours_friday},{teacher_password_entry.get()}'
         client_socket.send(teacher.encode())
         response = client_socket.recv(1024).decode()
         if response == 'exists':
@@ -99,6 +100,21 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
             messagebox.showinfo('successfully added', 'Teacher Added Successfully')
             window.destroy()  # Close the window
             parent.deiconify()  # Show the parent window again
+
+
+def get_teachers():
+    client_socket.send(f'{GET_TEACHERS}'.encode())
+    file_size = client_socket.recv(1024).decode()
+    if file_size == 'no teachers found':
+        messagebox.showerror("Input Error", "There Are No Teachers In The System")
+        return 'no teachers found'
+    else:
+        teachers = json.loads(client_socket.recv(int(file_size)).decode())  # Convert json string to list[list]
+        teachers_dict = {}
+        for teacher in teachers:
+
+            teachers_dict[teacher[0]] = Teacher(teacher[1], teacher[-1], teacher[4])
+        return teachers_dict
 
 
 if __name__ == "__main__":

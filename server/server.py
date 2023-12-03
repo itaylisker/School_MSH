@@ -21,7 +21,7 @@ def login(data, client):
 def add_subject(data, client):
     from db_handle import select_data, insert_data
     if select_data('subjects', 'id', {'name': data[1]}):
-        client.send(b'exists')
+        client.send(Enum.EXISTS.encode())
     else:
         insert_data('subjects', 'name, max_hours_per_day', (data[1], data[2]))
         new_sub_id = str(select_data('subjects', 'id', {'name': data[1]})[0][0])
@@ -45,7 +45,7 @@ def get_and_send_subjects(client):
 def add_teacher(data, client):
     from db_handle import select_data, insert_data
     if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
-        client.send(b'exists')
+        client.send(Enum.EXISTS.encode())
     else:
         work_hours = [[True for i in range(int(data[4]))] for day in range(5)]
         work_hours.append([True for i in range(int(data[5]))])
@@ -85,14 +85,37 @@ def add_grade(data, client):
     hours_per_subject = grade[1]
 
     if select_data('grades', 'name', {'name': grade_name, 'AND': None}):
-        client.send(b'exists')
+        client.send(Enum.EXISTS.encode())
 
     else:
         insert_data('grades', 'name, hours_per_subject', (grade_name, hours_per_subject))
-        client.send(b'success')
+        add_classroom([Enum.ADD_CLASSROOM, grade_name, False], client)
+
+
+def add_classroom(data, client):
+    from db_handle import select_data, insert_data
+    classroom_name = data[1]
+
+    available = [[True for i in range(11)] for day in range(6)]
+    if select_data('classrooms', 'name', {'name': classroom_name}):
+        if data[2]:
+            client.send(Enum.EXISTS.encode())
+        else:
+            client.send(Enum.SUCCESS.encode())
+
+    else:
+        with open('server/jsons/available_hours.json', 'w') as f:
+            json.dump(available, f)
+
+        with open('server/jsons/available_hours.json', 'r') as f:
+            available = f.read()
+
+        insert_data('classrooms', 'name, available', (classroom_name, available))
+        client.send(Enum.SUCCESS.encode())
 
 
 def client_handle(client_object):
+
     while True:
         data = client_object.recv(1024).decode().split(',')
 
@@ -113,6 +136,9 @@ def client_handle(client_object):
 
         elif data[0] == Enum.ADD_GRADE:
             add_grade(data, client_object)
+
+        elif data[0] == Enum.ADD_CLASSROOM:
+            add_classroom(data, client_object)
 
 
 if __name__ == '__main__':

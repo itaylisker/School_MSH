@@ -8,6 +8,11 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect(('127.0.0.1', 5050))
 
 
+def close_connection(window):
+    window.destroy()
+    client_socket.close()
+
+
 # Function to check login credentials
 def check_credentials(window, username_entry, password_entry):
 
@@ -45,7 +50,7 @@ def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
         subject = f'{Enum.ADD_SUBJECT},{subject_name},{max_hours}'
         client_socket.send(subject.encode())
         response = client_socket.recv(1024).decode()
-        if response == 'exists':
+        if response == Enum.EXISTS:
             messagebox.showerror("Input Error", "Subject Already Exists.")
             subject_name_entry.delete(0, 'end')
             max_hours_entry.delete(0, 'end')
@@ -53,7 +58,7 @@ def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
 
             if type(subjects) != dict:
                 subjects = {}
-                subjects[int(response)] = Subject(subject_name, max_hours)
+            subjects[int(response)] = Subject(subject_name, max_hours)
 
             messagebox.showinfo('successfully added', 'Subject Added Successfully')
             window.destroy()  # Close the window
@@ -93,7 +98,7 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
         teacher = f'{Enum.ADD_TEACHER},{teacher_name},{teacher_subject_id},{teacher_day_off},{teacher_max_hours_day},{teacher_max_hours_friday},{teacher_password_entry.get()}'
         client_socket.send(teacher.encode())
         response = client_socket.recv(1024).decode()
-        if response == 'exists':
+        if response == Enum.EXISTS:
             messagebox.showerror("Input Error", "Teacher With This Name already exists.")
         else:
             data = teacher.split(',')
@@ -101,8 +106,9 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
             work_hours.append([True for i in range(int(data[5]))])
             work_hours[int(data[3]) - 1] = [False for i in range(len(work_hours[int(data[3]) - 1]))]
             try:
-                if teachers:
-                    teachers[int(response)] = Teacher(teacher_name, subjects[teacher_subject_id].name, work_hours)
+                if type(teachers) != dict:
+                    teachers = {}
+                teachers[int(response)] = Teacher(teacher_name, subjects[teacher_subject_id].name, work_hours)
             finally:
                 messagebox.showinfo('successfully added', 'Teacher Added Successfully')
                 window.destroy()  # Close the window
@@ -139,12 +145,16 @@ def add_grade(grade_name_entry, hours_per_subject_dict, window, parent):
     grade = f'{grade_name}|{hours_per_subject_str}'
     client_socket.send(grade.encode())
     response = client_socket.recv(1024).decode()
-    if response == 'exists':
+    if response == Enum.EXISTS:
         messagebox.showerror("Input error", "Grade with this name already exists.")
         window.destroy()
         parent.deiconify()
     else:
         messagebox.showinfo('Successfully added', 'Grade added successfully')
+
+
+def add_classroom():
+    pass
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ class LoginWindow(BaseWindow):
         login_button = tk.Button(self, text="Login", cursor='hand2', borderwidth=10, font=('Helvetica bold', 26), command=lambda: client.check_credentials(self, username_entry, password_entry))
         login_button.place(x=150, y=210)
 
+        self.protocol("WN_DELETE_WINDOW", lambda: client.close_connection(self))
         self.mainloop()
 
 
@@ -208,7 +209,7 @@ class AddGradeWindow(BaseChildWindow):
 
         self.window.withdraw()
         tk.Label(subject_hours_window,
-                 text=f'enter amount of hours {self.grade_name_entry.get()} will study each subject every week').pack()
+                 text=f'Enter amount of hours {self.grade_name_entry.get()} will study each subject every week').pack()
         for i in selected_subjects:
             tk.Label(subject_hours_window, text=f'{i}').pack()
             hours_per_subject_spinbox = tk.Spinbox(subject_hours_window, from_=1, to=10, state='readonly')
@@ -236,16 +237,19 @@ class MainApplicationAdmin(BaseWindow):
         # Create a buttons to open the "view all teachers" and "view all subjects" windows
         tk.Button(self, text="View All Teachers", command=self.view_all_teachers).pack()
         tk.Button(self, text="View All Subjects", command=self.view_all_subjects).pack()
+        self.protocol("WM_DELETE_WINDOW", lambda: client.close_connection(self))
 
     def view_all_teachers(self):
         global teachers
         # Create a new window to display the list of teachers
         view_window = tk.Toplevel(self)
-        view_window.title("All Subjects")
+        view_window.title("All teachers")
 
         # Create a text widget to display the list of teachers
         text_widget = tk.Text(view_window, height=10, width=40)
         text_widget.pack()
+        if teachers:
+            print(f'type: {type(teachers)}, teachers: {[i.name for i in teachers.values()]}')
 
         if type(teachers) != dict:
             teachers = client.get_teachers()
@@ -263,12 +267,14 @@ class MainApplicationAdmin(BaseWindow):
         global subjects
         # Create a new window to display the list of teachers
         view_window = tk.Toplevel(self)
-        view_window.title("All Teachers")
+        view_window.title("All subjects")
 
         # Create a text widget to display the list of teachers
         text_widget = tk.Text(view_window, height=10, width=40)
         text_widget.pack()
         # Populate the text widget with the list of teachers
+        if subjects:
+            print(f'type: {type(subjects)}, subjects: {[i.name for i in subjects.values()]}')
         if type(subjects) != dict:
             subjects = client.get_subjects()
 
@@ -282,7 +288,7 @@ class MainApplicationAdmin(BaseWindow):
 
 
 def get_selected_item_id(listbox, dicti):
-    # dicti is a dict which consists of [item_id: item_object] (example teachers dict: [3: Teacher_object])
+    # dicti is a dict which consists of [item_id: item] (example teachers dict: [3: Teacher_object]) 
     selected_indices = listbox.curselection()
     if selected_indices:
         selected_index = selected_indices[0]

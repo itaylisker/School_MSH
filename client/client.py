@@ -41,6 +41,7 @@ def check_credentials(window, username_entry, password_entry):
 
 
 def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
+    #  TODO: insure that max_hours type is int
     subject_name = subject_name_entry.get().title()
     max_hours = max_hours_entry.get()
 
@@ -61,8 +62,8 @@ def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
             subjects[int(response)] = Subject(subject_name, max_hours)
 
             messagebox.showinfo('successfully added', 'Subject Added Successfully')
-            window.destroy()  # Close the window
-            parent.deiconify()  # Show the parent window again
+            window.destroy()
+            parent.create_main_app_frame()
 
 
 def get_subjects():
@@ -111,8 +112,8 @@ def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, 
                 teachers[int(response)] = Teacher(teacher_name, subjects[teacher_subject_id].name, work_hours)
             finally:
                 messagebox.showinfo('successfully added', 'Teacher Added Successfully')
-                window.destroy()  # Close the window
-                parent.deiconify()  # Show the parent window again
+                window.destroy()
+                parent.create_main_app_frame()
 
 
 def get_teachers():

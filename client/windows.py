@@ -23,6 +23,13 @@ class BaseChildWindow:
             self.parent.withdraw()
 
 
+class BaseFrame(tk.Frame):
+    def __init__(self, master, width=500, height=500, **kwargs):
+        super().__init__(master, **kwargs)
+        self.config(f'{width}x{height}')
+        self.pack()
+
+
 class LoginWindow(BaseWindow):
 
     def __init__(self):
@@ -47,83 +54,92 @@ class LoginWindow(BaseWindow):
         self.mainloop()
 
 
-class AddSubjectWindow(BaseChildWindow):
+class AddSubjectFrame(tk.Frame):
 
     def __init__(self, parent):
-        global subjects
-        super().__init__(parent=parent, title='Add Subject')
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
 
+        global subjects
+        parent.winfo_children()[0].destroy()
+        super().__init__(parent)
+        self.pack()
+
+        tk.Button(self, text="Back", command=previous_window).pack()
         # Create labels and entry fields
-        tk.Label(self.window, text="Enter Subject Name:").pack()
-        self.subject_name_entry = tk.Entry(self.window)
+        tk.Label(self, text="Enter Subject Name:").pack()
+        self.subject_name_entry = tk.Entry(self)
         self.subject_name_entry.pack()
 
-        tk.Label(self.window, text="Enter Max Hours per Day:").pack()
-        self.max_hours_entry = tk.Entry(self.window)
+        tk.Label(self, text="Enter Max Hours per Day:").pack()
+        self.max_hours_entry = tk.Entry(self)
         self.max_hours_entry.pack()
 
         # Create a button to add the subject
-        (tk.Button(self.window, text="Add Subject", cursor='hand2',
+        (tk.Button(self, text="Add Subject", cursor='hand2',
                   command=lambda:
-                  client.add_subject(self.subject_name_entry, self.max_hours_entry, self.window, self.parent, subjects)).pack())
-
-        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-    def on_closing(self):
-        self.parent.deiconify()  # Show the parent window again
-        self.window.destroy()
+                  client.add_subject(self.subject_name_entry, self.max_hours_entry, self, parent, subjects)).pack())
 
 
-class AddTeacherWindow(BaseChildWindow):
+class AddTeacherFrame(tk.Frame):
 
     def __init__(self, parent):
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
+
         global subjects
         global teachers
-        super().__init__(parent, 'Add Teacher')
 
+        parent.winfo_children()[0].destroy()
+        super().__init__(parent)
+        self.pack()
+
+        tk.Button(self, text="Back", command=previous_window).pack()
         # Create labels and entry fields
-        tk.Label(self.window, text="Enter Teacher Full Name:").pack()
-        self.teacher_name_entry = tk.Entry(self.window)
+        tk.Label(self, text="Enter Teacher Full Name:").pack()
+        self.teacher_name_entry = tk.Entry(self)
         self.teacher_name_entry.pack()
 
-        tk.Label(self.window, text="Enter Teacher Password:").pack()
-        self.teacher_password_entry = tk.Entry(self.window)
+        tk.Label(self, text="Enter Teacher Password:").pack()
+        self.teacher_password_entry = tk.Entry(self)
         self.teacher_password_entry.pack()
 
-        tk.Label(self.window, text="Choose Teacher Subject:").pack()
+        tk.Label(self, text="Choose Teacher Subject:").pack()
 
-        scrollbar = tk.Scrollbar(self.window)
+        scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side='left', fill='y')
 
-        self.teacher_subject_listbox = tk.Listbox(self.window, selectmode='single', yscrollcommand=scrollbar.set)
+        self.teacher_subject_listbox = tk.Listbox(self, selectmode='single', yscrollcommand=scrollbar.set)
 
         if type(subjects) != dict:
             subjects = client.get_subjects()
 
         if subjects == 'no subjects found':
-            self.on_closing()
+            previous_window()
         else:
             for e, i in enumerate(subjects.values()):
                 self.teacher_subject_listbox.insert(e, i.name)
             self.teacher_subject_listbox.pack(side='left', fill='both')
             scrollbar.config(command=self.teacher_subject_listbox.yview)
 
-            tk.Label(self.window, text="Choose Teacher's Day Off:").pack()
+            tk.Label(self, text="Choose Teacher's Day Off:").pack()
             dow_list = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-            var = tk.StringVar(self.window)
-            self.teacher_day_off_spinbox = tk.Spinbox(self.window, textvariable=var, value=dow_list, increment=2, width=10, font=('sans-serif', 18), state='readonly')
+            var = tk.StringVar(self)
+            self.teacher_day_off_spinbox = tk.Spinbox(self, textvariable=var, value=dow_list, increment=2, width=10, font=('sans-serif', 18), state='readonly')
             self.teacher_day_off_spinbox.pack()
 
-            tk.Label(self.window, text="Enter Teacher's Max Hours Of Teaching Per Day:").pack()
-            self.teacher_max_hours_day_entry = tk.Entry(self.window)
+            tk.Label(self, text="Enter Teacher's Max Hours Of Teaching Per Day:").pack()
+            self.teacher_max_hours_day_entry = tk.Entry(self)
             self.teacher_max_hours_day_entry.pack()
 
-            tk.Label(self.window, text="Enter Teacher's Max Hours Of Teaching Per Friday:").pack()
-            self.teacher_max_hours_friday_entry = tk.Entry(self.window)
+            tk.Label(self, text="Enter Teacher's Max Hours Of Teaching Per Friday:").pack()
+            self.teacher_max_hours_friday_entry = tk.Entry(self)
             self.teacher_max_hours_friday_entry.pack()
 
             # Create a button to add the teacher
-            (tk.Button(self.window, text="Add Teacher",
+            (tk.Button(self, text="Add Teacher",
                       command=lambda: client.add_teacher(
                           self.teacher_name_entry,
                           self.teacher_password_entry,
@@ -131,72 +147,68 @@ class AddTeacherWindow(BaseChildWindow):
                           dow_list.index(var.get()),
                           self.teacher_max_hours_day_entry,
                           self.teacher_max_hours_friday_entry,
-                          self.window,
-                          self.parent,
+                          self,
+                          parent,
                           teachers,
                           subjects
                           )).pack())
 
-            self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-    def on_closing(self):
-        self.parent.deiconify()  # Show the parent window again
-        self.window.destroy()
-
-
-class AddGradeWindow(BaseChildWindow):
-    # TODO: finish ADDGRADEWindow
-    '''
-    TODO: add listbox of subjects (multiple selection) and after the subjects are chosen open a new window that
-     lets the user type the amount of hours the class needs to study of each subject
-    '''
+class AddGradeWindow(tk.Frame):
     def __init__(self, parent):
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
+
         global subjects
+        self.parent = parent
 
-        super().__init__(parent, 'Add grade')
+        parent.winfo_children()[0].destroy()
+        super().__init__(parent)
+        self.pack()
 
-        tk.Label(self.window, text="Enter grade name:").pack()
-        self.grade_name_entry = tk.Entry(self.window)
+        tk.Button(self, text="Back", command=previous_window).pack()
+
+        tk.Label(self, text="Enter grade name:").pack()
+        self.grade_name_entry = tk.Entry(self)
         self.grade_name_entry.pack()
 
-        tk.Label(self.window, text="Choose subjects that the class will study:").pack()
+        tk.Label(self, text="Choose subjects that the class will study:").pack()
 
-        scrollbar = tk.Scrollbar(self.window)
+        scrollbar = tk.Scrollbar(self)
         scrollbar.pack(side='left', fill='y')
 
-        self.subjects_listbox = tk.Listbox(self.window, selectmode='multiple', yscrollcommand=scrollbar.set)
+        self.subjects_listbox = tk.Listbox(self, selectmode='multiple', yscrollcommand=scrollbar.set)
 
         if type(subjects) != dict:
             subjects = client.get_subjects()
 
         if subjects == 'no subjects found':
-            self.on_closing()
+            previous_window()
         else:
             for e, i in enumerate(subjects.values()):
                 self.subjects_listbox.insert(e, i.name)
             self.subjects_listbox.pack(side='left', fill='both')
             scrollbar.config(command=self.subjects_listbox.yview)
 
-            tk.Button(self.window, text='Finish choosing subjects', command=lambda: self.hours_per_grade(get_selected_items_as_shown_to_user(self.subjects_listbox))).pack()
-            self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+            tk.Button(self, text='Finish choosing subjects', command=lambda: self.hours_per_grade(get_selected_items_as_shown_to_user(self.subjects_listbox))).pack()
 
     def hours_per_grade(self, selected_subjects):
-        # TODO: replace entry with spinbox
-        # TODO: make add_grade function in client and server files and link them to this one
         def close():
             subject_hours_window.destroy()
-            self.window.deiconify()
+            self.parent.deiconify()
 
         def submit(hours_per_subject_dict, spin_list):
             for index, subject in enumerate(hours_per_subject_dict.keys()):
                 hours_per_subject_dict[subject] = spin_list[index].get()
 
             print(hours_per_subject)
-            client.add_grade(self.grade_name_entry, hours_per_subject, subject_hours_window, self.window)
+            client.add_grade(self.grade_name_entry, hours_per_subject, subject_hours_window, self)
 
             # go back to main window
             close()
-            self.on_closing()
+            self.destroy()
+            self.parent.create_main_app_frame()
 
         if self.grade_name_entry.get().strip() =='':
             from tkinter import messagebox
@@ -205,9 +217,9 @@ class AddGradeWindow(BaseChildWindow):
 
         hours_per_subject = {}
         spinbox_list = []
-        subject_hours_window = tk.Toplevel(self.window)
+        subject_hours_window = tk.Toplevel(self.parent)
 
-        self.window.withdraw()
+        self.parent.withdraw()
         tk.Label(subject_hours_window,
                  text=f'Enter amount of hours {self.grade_name_entry.get()} will study each subject every week').pack()
         for i in selected_subjects:
@@ -219,24 +231,24 @@ class AddGradeWindow(BaseChildWindow):
         tk.Button(subject_hours_window, text='submit', command=lambda: submit(hours_per_subject, spinbox_list)).pack()
         subject_hours_window.protocol("WM_DELETE_WINDOW", close)
 
-    def on_closing(self):
-        self.parent.deiconify()  # Show the parent window again
-        self.window.destroy()
-
 
 class MainApplicationAdmin(BaseWindow):
     # TODO: finish commented buttons
     def __init__(self):
         super().__init__('SSM - School Schedule Manager')
+        self.create_main_app_frame()
 
+    def create_main_app_frame(self):
+        main_app_frame = tk.Frame(self)
+        main_app_frame.pack()
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
-        tk.Button(self, text="Add Subject", command=lambda: AddSubjectWindow(parent=self)).pack()
-        tk.Button(self, text="Add Teacher", command=lambda: AddTeacherWindow(parent=self)).pack()
-        tk.Button(self, text="Add Grade", command=lambda: AddGradeWindow(self)).pack()
+        tk.Button(main_app_frame, text="Add Subject", command=lambda: AddSubjectFrame(parent=self)).pack()
+        tk.Button(main_app_frame, text="Add Teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
+        tk.Button(main_app_frame, text="Add Grade", command=lambda: AddGradeWindow(self)).pack()
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows
-        tk.Button(self, text="View All Teachers", command=self.view_all_teachers).pack()
-        tk.Button(self, text="View All Subjects", command=self.view_all_subjects).pack()
+        tk.Button(main_app_frame, text="View All Teachers", command=self.view_all_teachers).pack()
+        tk.Button(main_app_frame, text="View All Subjects", command=self.view_all_subjects).pack()
         self.protocol("WM_DELETE_WINDOW", lambda: client.close_connection(self))
 
     def view_all_teachers(self):

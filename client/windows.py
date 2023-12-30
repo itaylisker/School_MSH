@@ -154,7 +154,7 @@ class AddTeacherFrame(tk.Frame):
                           )).pack())
 
 
-class AddGradeWindow(tk.Frame):
+class AddGradeFrame(tk.Frame):
     def __init__(self, parent):
         def previous_window():
             self.destroy()
@@ -244,7 +244,7 @@ class MainApplicationAdmin(BaseWindow):
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
         tk.Button(main_app_frame, text="Add Subject", command=lambda: AddSubjectFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add Teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
-        tk.Button(main_app_frame, text="Add Grade", command=lambda: AddGradeWindow(self)).pack()
+        tk.Button(main_app_frame, text="Add Grade", command=lambda: AddGradeFrame(self)).pack()
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows
         tk.Button(main_app_frame, text="View All Teachers", command=self.view_all_teachers).pack()

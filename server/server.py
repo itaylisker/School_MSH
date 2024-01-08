@@ -18,6 +18,12 @@ def login(data, client):
     client.send(check_credentials(username, password).encode())
 
 
+def create_schedules(client):
+
+
+    pass
+
+
 def add_subject(data, client):
     from db_handle import select_data, insert_data
     if select_data('subjects', 'id', {'name': data[1]}):
@@ -92,6 +98,23 @@ def add_grade(data, client):
         add_classroom([Enum.ADD_CLASSROOM, grade_name, False], client)
 
 
+def get_and_send_grades(client):
+    from db_handle import select_data
+
+    grades: list[tuple] = select_data('Grades', '*')
+
+    if grades:
+        with open('server/jsons/grades.json', 'w') as f:
+            json.dump(grades, f)
+            print(grades)
+        file_size = str(os.path.getsize('server/jsons/grades.json'))
+        client.send(file_size.encode())
+        with open('server/jsons/grades.json', 'rb') as f:
+            client.send(f.read())
+    else:
+        client.send(b'no grades found')
+
+
 def add_classroom(data, client):
     from db_handle import select_data, insert_data
     classroom_name = data[1]
@@ -122,6 +145,9 @@ def client_handle(client_object):
         if data[0] == Enum.LOGIN_INFO:
             login(data, client_object)
 
+        elif data[0] == Enum.CREATE_SCHEDULES:
+            create_schedules(data, client_object)
+
         elif data[0] == Enum.ADD_SUBJECT:
             add_subject(data, client_object)
 
@@ -136,6 +162,9 @@ def client_handle(client_object):
 
         elif data[0] == Enum.ADD_GRADE:
             add_grade(data, client_object)
+
+        elif data[0] == Enum.GET_GRADES:
+            get_and_send_grades(client_object)
 
         elif data[0] == Enum.ADD_CLASSROOM:
             add_classroom(data, client_object)

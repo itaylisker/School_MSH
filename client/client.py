@@ -1,5 +1,5 @@
 from tkinter import messagebox
-from objects import Teacher, Grade, Subject
+from common import Teacher, Grade, Subject
 from common import Enum
 import windows
 import socket
@@ -38,6 +38,13 @@ def check_credentials(window, username_entry, password_entry):
         messagebox.showerror("login failed", "Wrong Password")
         username_entry.delete(0, 'end')
         password_entry.delete(0, 'end')
+
+
+def create_schedules():
+    # TODO: finish func
+    # TODO: start by checking what subject is studied the most
+    client_socket.send(f'{Enum.CREATE_SCHEDULES}'.encode())
+    pass
 
 
 def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
@@ -154,7 +161,22 @@ def add_grade(grade_name_entry, hours_per_subject_dict, window, parent):
         messagebox.showinfo('Successfully added', 'Grade added successfully')
 
 
+def get_grades():
+    client_socket.send(Enum.GET_GRADES.encode())
+    file_size = client_socket.recv(1024).decode()
+    if file_size == 'no grades found':
+        messagebox.showerror("Input Error", "There Are No Grades In The System")
+        return 'no grades found'
+    else:
+        grades = json.loads(client_socket.recv(int(file_size)).decode())  # Convert json string to list[list]
+        grades_dict = {}
+        for grade in grades:
+            grades_dict[grade[0]] = Grade(grade[1], grade[3], grade[4], grade[2])
+        return grades_dict
+
+
 def add_classroom():
+    # TODO: finish func
     pass
 
 

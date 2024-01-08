@@ -156,7 +156,7 @@ class AddTeacherFrame(tk.Frame):
                           )).pack())
 
 
-class AddGradeWindow(tk.Frame):
+class AddGradeFrame(tk.Frame):
     def __init__(self, parent):
         def previous_window():
             self.destroy()
@@ -248,9 +248,11 @@ class MainApplicationAdmin(BaseWindow):
         tk.Button(main_app_frame, text='Create schedules', command=client.create_schedules).pack()
 
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
+        frame-update
         tk.Button(main_app_frame, text="Add subject", command=lambda: AddSubjectFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add grade", command=lambda: AddGradeWindow(self)).pack()
+
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows
         tk.Button(main_app_frame, text="View all teachers", command=self.view_all_teachers).pack()

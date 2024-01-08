@@ -250,7 +250,7 @@ class MainApplicationAdmin(BaseWindow):
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
         tk.Button(main_app_frame, text="Add subject", command=lambda: AddSubjectFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
-        tk.Button(main_app_frame, text="Add grade", command=lambda: AddGradeWindow(self)).pack()
+        tk.Button(main_app_frame, text="Add grade", command=lambda: AddGradeFrame(self)).pack()
 
 
         # Create a buttons to open the "view all teachers" and "view all subjects" windows

@@ -1,5 +1,5 @@
 from tkinter import messagebox
-from common import Teacher, Grade, Subject
+from common import Teacher, Grade, Subject, Classroom, Lesson
 from common import Enum
 import windows
 import socket
@@ -40,11 +40,121 @@ def check_credentials(window, username_entry, password_entry):
         password_entry.delete(0, 'end')
 
 
-def create_schedules():
+def create_schedules(teachers, grades, classrooms, subjects):
     # TODO: finish func
     # TODO: start by checking what subject is studied the most
-    client_socket.send(f'{Enum.CREATE_SCHEDULES}'.encode())
-    pass
+    if not teachers:
+        teachers = get_teachers()
+    if not grades:
+        grades = get_grades()
+    if not classrooms:
+        classrooms = get_classrooms()
+    if not subjects:
+        subjects = get_subjects()
+
+    unassigned_lessons = []
+    subjects_lacking_in_teachers = []
+    available_hours_per_subject = {
+        # dict consists of how many hours are teachable of each subject
+        # based on the teachers that are registered in the database and
+        # their days off
+        subject.name: sum(
+            [
+                sum(
+                    sum(j) for j in i.work_hours
+                )
+                for i in teachers.values() if i.subject == subject.name
+            ]
+        )
+        for subject in subjects.values()
+    }
+
+    print(available_hours_per_subject)
+    print(f'{teachers}\n{grades}\n{classrooms}\n{subjects}')
+
+    for grade in grades.values():
+        for subject, hours in grade.hours_per_subject.items():
+            available_hours_per_subject[subject] -= int(hours)
+    for subject, hours in available_hours_per_subject.items():
+        if hours < 0:
+            subjects_lacking_in_teachers.append(subject)
+    if len(subjects_lacking_in_teachers) > 0:
+        messagebox.showerror(
+            "not enough staff",
+            f"not enough teachers for subjects: {','.join(subjects_lacking_in_teachers)} "
+        )
+        return
+
+    adjusted_teachers = [teacher for teacher in teachers.values()]
+    adjusted_grades = [grade for grade in grades.values()]
+    adjusted_classrooms = [classroom for classroom in classrooms.values()]
+    adjusted_subjects = {subject.name: subject for subject_id, subject in subjects.items()}
+
+    print(f'{adjusted_teachers}\n{adjusted_grades}\n{adjusted_classrooms}\n{adjusted_subjects}')
+
+    def find_available_teacher(teachers, subject, day, hour):
+        # Find a teacher who teaches the subject and is available at the given day and hour
+        for teacher in teachers:
+            if teacher.subject == subject:
+                if len(teacher.work_hours) >= day + 1 and len(teacher.work_hours[day])>= hour + 1 and teacher.work_hours[day][hour]:
+                    return teacher
+        return None
+
+    def find_available_classroom(classrooms, day, hour):
+        # Find a classroom that is available at the given day and hour
+        for classroom in classrooms:
+            if classroom.available[day][hour]:
+                return classroom
+        return None
+
+    def schedule_lesson(grade, teacher, classroom, day, hour):
+        lesson = Lesson(teacher)
+        lesson.assign(day, hour, classroom)
+        grade.change_hour(lesson, day, hour, "add")
+        teacher.work_hours[day][hour] = False
+        classroom.available[day][hour] = False
+
+    def can_schedule(grade, subject, day, hour):
+        # Check if the indices are within the valid range
+        if day < 0 or day >= len(grade.MSH) or hour < 0 or hour >= len(grade.MSH[day]):
+            return False
+
+        # Check if the lesson can be scheduled in this slot
+        return grade.MSH[day][hour] is None and \
+            sum(1 for lesson in grade.MSH[day] if lesson and lesson.subject == subject) < adjusted_subjects[
+                subject].max_hours_in_a_day
+
+    for grade in adjusted_grades:
+        for subject, total_hours in sorted(grade.hours_per_subject.items(), key=lambda x: x[1], reverse=True):
+            hours_scheduled = 0
+            print(f'{type(hours_scheduled)}, {type(total_hours)}')
+            total_hours = int(total_hours)
+            while hours_scheduled < total_hours:
+                for day in range(6):  # Sunday to Friday
+                    for hour in range(8):
+                        if hours_scheduled >= total_hours or not can_schedule(grade, subject, day, hour):
+                            continue
+
+                        teacher = find_available_teacher(adjusted_teachers, subject, day, hour)
+                        classroom = find_available_classroom(adjusted_classrooms, day, hour)
+                        if teacher and classroom:
+                            schedule_lesson(grade, teacher, classroom, day, hour)
+                            hours_scheduled += 1
+
+                        if hours_scheduled >= total_hours:
+                            break
+
+                    if hours_scheduled >= total_hours:
+                        break
+
+    with open('check.txt', 'w') as f:
+        f.write(json.dumps([[[hour.subject if hour else None for hour in day] for day in schedule] for schedule in
+         [grade.MSH for grade in adjusted_grades]]))
+    print([[[hour.subject if hour else None for hour in day] for day in schedule] for schedule in
+          [grade.MSH for grade in adjusted_grades]])
+    print(grades)
+    print(adjusted_grades)
+    return grades
 
 
 def add_subject(subject_name_entry, max_hours_entry, window, parent, subjects):
@@ -87,7 +197,12 @@ def get_subjects():
         return subjects_dict
 
 
-def add_teacher(teacher_name_entry, teacher_password_entry, teacher_subject_id, teacher_day_off_number, teacher_max_hours_day_entry, teacher_max_hours_friday_entry, window, parent, teachers, subjects):
+def add_teacher(
+        teacher_name_entry, teacher_password_entry,
+        teacher_subject_id, teacher_day_off_number,
+        teacher_max_hours_day_entry, teacher_max_hours_friday_entry,
+        window, parent, teachers, subjects
+                ):
     teacher_name = teacher_name_entry.get().title()
     teacher_day_off = teacher_day_off_number+1
     teacher_max_hours_day = int(teacher_max_hours_day_entry.get())
@@ -142,12 +257,12 @@ def add_grade(grade_name_entry, hours_per_subject_dict, window, parent):
     from os import path
     grade_name = grade_name_entry.get().title()
 
-    with open('client/jsons/hours_per_subject.json', 'w') as f:
+    with open('jsons/hours_per_subject.json', 'w') as f:
         json.dump(hours_per_subject_dict, f)
-    file_size = str(path.getsize('client/jsons/hours_per_subject.json'))
+    file_size = str(path.getsize('jsons/hours_per_subject.json'))
     size_text = f'{Enum.ADD_GRADE},{file_size}'
     client_socket.send(size_text.encode())
-    with open('client/jsons/hours_per_subject.json', 'r') as f:
+    with open('jsons/hours_per_subject.json', 'r') as f:
         hours_per_subject_str = f.read()
 
     grade = f'{grade_name}|{hours_per_subject_str}'
@@ -178,6 +293,20 @@ def get_grades():
 def add_classroom():
     # TODO: finish func
     pass
+
+
+def get_classrooms():
+    client_socket.send(Enum.GET_CLASSROOMS.encode())
+    file_size = client_socket.recv(1024).decode()
+    if file_size == 'no classrooms found':
+        messagebox.showerror("Input Error", "There Are No classrooms In The System")
+        return 'no classrooms found'
+    else:
+        classrooms = json.loads(client_socket.recv(int(file_size)).decode())  # Convert json string to list[list]
+        classrooms_dict = {}
+        for classroom in classrooms:
+            classrooms_dict[classroom[0]] = Classroom(classroom[1], classroom[2])
+        return classrooms_dict
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import client
 subjects = None
 teachers = None
 grades = None
-
+classrooms = None
 
 class BaseWindow(tk.Tk):
 
@@ -242,21 +242,27 @@ class MainApplicationAdmin(BaseWindow):
         self.protocol("WM_DELETE_WINDOW", lambda: client.close_connection(self))
 
     def create_main_app_frame(self):
+        global teachers
+        global grades
+        global classrooms
+        global subjects
+
         main_app_frame = tk.Frame(self)
         main_app_frame.pack()
 
-        tk.Button(main_app_frame, text='Create schedules', command=client.create_schedules).pack()
+        tk.Button(main_app_frame, text='Create schedules',
+                  command=lambda: client.create_schedules(teachers, grades, classrooms, subjects)).pack()
 
         # Create buttons to open the "Add Subject" and "Add Teacher" windows
         tk.Button(main_app_frame, text="Add subject", command=lambda: AddSubjectFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
         tk.Button(main_app_frame, text="Add grade", command=lambda: AddGradeFrame(self)).pack()
 
-
-        # Create a buttons to open the "view all teachers" and "view all subjects" windows
+        # Create buttons to open the "view all teachers" and "view all subjects" windows
         tk.Button(main_app_frame, text="View all teachers", command=self.view_all_teachers).pack()
         tk.Button(main_app_frame, text="View all subjects", command=self.view_all_subjects).pack()
         tk.Button(main_app_frame, text='View all grades', command=self.view_all_grades).pack()
+        tk.Button(main_app_frame, text='View all classrooms', command=self.view_all_classrooms).pack()
 
     def view_all_teachers(self):
         global teachers
@@ -328,6 +334,28 @@ class MainApplicationAdmin(BaseWindow):
             for grade in grades.values():
                 text_widget.insert(tk.END, f'Grade name: {grade.name}\n')
                 text_widget.insert(tk.END, f'Grade\'s hours per subject: {grade.hours_per_subject}\n\n')
+
+    def view_all_classrooms(self):
+        global classrooms
+        # Create a new window to display the list of grades
+        view_window = tk.Toplevel(self)
+        view_window.title("All classrooms")
+        view_window.config(pady=100, padx=100)
+
+        # Create a text widget to display the list of grades
+        text_widget = tk.Text(view_window, height=100, width=100)
+        text_widget.pack()
+
+        if type(classrooms) != dict:
+            classrooms = client.get_classrooms()
+
+        if classrooms == 'no classrooms found':
+            text_widget.insert(tk.END, 'No classrooms Found')
+
+        else:
+            for classroom in classrooms.values():
+                text_widget.insert(tk.END, f'Grade name: {classroom.name}\n')
+                text_widget.insert(tk.END, f'Grade\'s hours per subject: {classroom.available}\n\n')
 
 
 def get_selected_item_id(listbox, dicti):

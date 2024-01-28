@@ -1,6 +1,5 @@
 class Enum:
     LOGIN_INFO = 'login'
-    CREATE_SCHEDULES = 'create_schedules'
     SUCCESS = 'success'
     EXISTS = 'exists'
     ADD_SUBJECT = 'add_subject'
@@ -10,13 +9,16 @@ class Enum:
     ADD_GRADE = 'add_grade'
     GET_GRADES = 'get_grades'
     ADD_CLASSROOM = 'add_classroom'
+    GET_CLASSROOMS = 'get_classrooms'
 
 
 class Classroom:
-    def __init__(self, name: str, hours_per_day: int, hours_per_friday: int):
+    def __init__(self, name: str, available: list[list[bool]]=None):
         self.name = name
-        self.available: list[list[bool]] = [[True for i in range(hours_per_day)] for day in range(5)]
-        self.available.append([True for i in range(hours_per_friday)])
+        if available:
+            self.available = available
+        else:
+            self.available = [[True for i in range(12)] for day in range(6)]
 
 
 class Subject:
@@ -32,37 +34,21 @@ class Teacher:
         self.subject = subject
         # if value is True than the teacher is available, if it's False the teacher is occupied
         self.work_hours = work_hours
-    # TODO: rewrite this ⬇
-    def cant_work(self, day, hour, flag):
-        if flag == 1:
-            for i in range(len(self.work_hours[day-1])):
-                self.work_hours[day-1][i] = False  # cant work at all
-        else:
-            self.work_hours[day-1][hour] = False  # cant work at all
-
-    def can_work(self, day, hour, flag):
-        if flag == 1:
-            for i in range(len(self.work_hours[day-1])):
-                self.work_hours[day-1][i] = True  # with the correct priority
-        else:
-            self.work_hours[day - 1][hour] = True  # with the correct priority
-
-    def is_working(self, day, hour, flag):
-        if flag == 1:
-            for i in range(len(self.work_hours[day-1])):
-                self.work_hours[day-1][i] = False  # is working
-        else:
-            self.work_hours[day - 1][hour] = False  # is working
 
 
 class Lesson:
-    def __init__(self, hour: int, day: int, room: Classroom, teacher: Teacher):
+    def __init__(self, teacher: Teacher):
+        self.teacher = teacher
+        self.subject: str = teacher.subject
+        self.hour: int = None
+        self.day: int = None
+        self.classroom: Classroom = None
+
+    def assign(self, day, hour, classroom):
         self.hour = hour
         self.day = day
-        self.room = room
-        self.teacher = teacher
-        self.subject = teacher.subject
-        room.available[day][hour] = False
+        self.classroom = classroom
+        classroom.available[day][hour] = False
 
 
 class Grade:
@@ -78,17 +64,17 @@ class Grade:
 
     def change_hour(self, lesson: Lesson, day: int, hour: int, action: str):
 
-        if action.lower == "remove":
-            self.hours_per_subject[self.MSH[day - 1][hour].subject] += 1
-            lesson.teacher.work_hours[day - 1][hour] = True
-            self.MSH[day - 1][hour] = None
-            lesson.room.available[day][hour] = True
+        if action.lower() == "remove":
+            self.hours_per_subject[self.MSH[day][hour].subject] += 1
+            lesson.teacher.work_hours[day][hour] = True
+            self.MSH[day][hour] = None
+            lesson.classroom.available[day][hour] = True
 
-        elif action.lower == "add":
-            self.MSH[day - 1][hour] = lesson
-            self.hours_per_subject[lesson.subject] -= 1
-            lesson.teacher.work_hours[day - 1][hour] = False
-            lesson.room.available[day][hour] = False
+        elif action.lower() == "add":
+            self.MSH[day][hour] = lesson
+            self.hours_per_subject[lesson.subject] = int(self.hours_per_subject[lesson.subject])-1
+            lesson.teacher.work_hours[day][hour] = False
+            lesson.classroom.available[day][hour] = False
         else:
             print('Invalid action')
         # if action.lower == "change":
@@ -101,3 +87,16 @@ class Grade:
 def encode_password(password):
     import hashlib
     return hashlib.md5(password.encode()).hexdigest()
+
+
+
+
+classrooms = [Classroom("Room1"), Classroom("Room2")]
+teachers = [Teacher("Teacher1", "Math", [[True] * 6 for _ in range(5)]), Teacher("Teacher2", "Science", [[True] * 6 for _ in range(5)])]
+subjects = {"Math": Subject("Math", 2), "Science": Subject("Science", 2)}
+grades = [Grade("Grade1", 6, 6, {"Math": 4, "Science": 2}), Grade("Grade2", 6, 6, {"Math": 4, "Science": 2})]
+
+
+
+
+

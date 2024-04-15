@@ -5,7 +5,7 @@ from threading import Thread
 from common import encode_password, Enum
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # AF_INET =Ipv4 | SOCK_STREAM- TCP
 
-server_socket.bind((f'127.0.0.1', 5050))
+server_socket.bind(('127.0.0.1', 5050))
 server_socket.listen()
 
 clients = {}
@@ -48,11 +48,11 @@ def get_and_send_subjects(client):
     from db_handle import select_data
     subjects: list[tuple] = select_data('subjects', '*')
     if subjects:
-        with open('jsons/subjects.json', 'w') as f:
+        with open('server/jsons/subjects.json', 'w') as f:
             json.dump(subjects, f)
-        file_size = str(os.path.getsize('jsons/subjects.json'))
+        file_size = str(os.path.getsize('server/jsons/subjects.json'))
         client.send(file_size.encode())
-        with open('jsons/subjects.json', 'rb') as f:
+        with open('server/jsons/subjects.json', 'rb') as f:
             client.send(f.read())
     else:
         client.send(b'no subjects found')
@@ -67,10 +67,10 @@ def add_teacher(data, client):
         work_hours.append([True for i in range(int(data[5]))])
         work_hours[int(data[3])-1] = [False for i in range(len(work_hours[int(data[3])-1]))]
 
-        with open('jsons/work_hours.json', 'w') as f:
+        with open('server/jsons/work_hours.json', 'w') as f:
             json.dump(work_hours, f)
 
-        with open('jsons/work_hours.json', 'r') as f:
+        with open('server/jsons/work_hours.json', 'r') as f:
             work_hours_json = f.read()
 
         insert_data('users', 'name, is_teacher, password, work_hours_json, subject_id', (data[1], 'true', encode_password(data[6]), work_hours_json, data[2]))
@@ -82,11 +82,11 @@ def get_and_send_teachers(client):
     from db_handle import select_data
     teachers: list[tuple] = select_data('users AS u JOIN public.subjects AS s on u.subject_id = s.id', 'u.*, s.name as subject_name')
     if teachers:
-        with open('jsons/teachers.json', 'w') as f:
+        with open('server/jsons/teachers.json', 'w') as f:
             json.dump(teachers, f)
-        file_size = str(os.path.getsize('jsons/teachers.json'))
+        file_size = str(os.path.getsize('server/jsons/teachers.json'))
         client.send(file_size.encode())
-        with open('jsons/teachers.json', 'rb') as f:
+        with open('server/jsons/teachers.json', 'rb') as f:
             client.send(f.read())
     else:
         client.send(b'no teachers found')
@@ -114,12 +114,12 @@ def get_and_send_grades(client):
     grades: list[tuple] = select_data('Grades', '*')
 
     if grades:
-        with open('jsons/grades.json', 'w') as f:
+        with open('server/jsons/grades.json', 'w') as f:
             json.dump(grades, f)
             print(grades)
-        file_size = str(os.path.getsize('jsons/grades.json'))
+        file_size = str(os.path.getsize('server/jsons/grades.json'))
         client.send(file_size.encode())
-        with open('jsons/grades.json', 'rb') as f:
+        with open('server/jsons/grades.json', 'rb') as f:
             client.send(f.read())
     else:
         client.send(b'no grades found')
@@ -153,15 +153,33 @@ def get_and_send_classrooms(client):
     classrooms: list[tuple] = select_data('Classrooms', '*')
 
     if classrooms:
-        with open('jsons/classrooms.json', 'w') as f:
+        with open('server/jsons/classrooms.json', 'w') as f:
             json.dump(classrooms, f)
             print(classrooms)
-        file_size = str(os.path.getsize('jsons/classrooms.json'))
+        file_size = str(os.path.getsize('server/jsons/classrooms.json'))
         client.send(file_size.encode())
-        with open('jsons/classrooms.json', 'rb') as f:
+        with open('server/jsons/classrooms.json', 'rb') as f:
             client.send(f.read())
     else:
         client.send(b'no classrooms found')
+
+
+def flask_login(data, client):
+    from db_handle import select_data
+    if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
+        client.send(Enum.SUCCESS.encode())
+    else:
+        client.send(Enum.FAIL.encode())
+
+
+def flask_handle(client_object):
+
+    while True:
+
+        data = client_object.recv(1024).decode().split(',')
+
+        if data[0] == Enum.LOGIN_INFO:
+            flask_login(data, client_object)
 
 
 def client_handle(client_object):
@@ -169,7 +187,10 @@ def client_handle(client_object):
     while True:
         data = client_object.recv(1024).decode().split(',')
 
-        if data[0] == Enum.LOGIN_INFO:
+        if data[0] == Enum.FLASK:
+            flask_handle(client_object)
+
+        elif data[0] == Enum.LOGIN_INFO:
             login(data, client_object)
 
         elif data[0] == Enum.ADD_SUBJECT:

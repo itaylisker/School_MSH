@@ -7,6 +7,7 @@ teachers = None
 grades = None
 classrooms = None
 
+
 class BaseWindow(tk.Tk):
 
     def __init__(self, title, width=800, height=800):

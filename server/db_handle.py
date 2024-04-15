@@ -4,7 +4,7 @@ from common import encode_password
 
 
 def connect():
-    return psycopg2.connect(host='127.0.0.1', database="SSM_db", user='postgres', password='1098qpoi')
+    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
 
 
 def insert_data(table: str, columns: str, data: tuple):

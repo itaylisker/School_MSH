@@ -42,7 +42,7 @@ def check_credentials(window, username_entry, password_entry):
 
 
 def create_schedules(teachers, grades, classrooms, subjects):
-
+    from os import path
     if not teachers:
         teachers = get_teachers()
     if not grades:
@@ -52,7 +52,8 @@ def create_schedules(teachers, grades, classrooms, subjects):
     if not subjects:
         subjects = get_subjects()
 
-    assigned_lessons_dict = {}
+    trys = 0
+    scheduled_lessons_dict: dict[Lesson: Grade] = {}  #dict of assigned lessons (for while condition) -> [Lesson_object: Grade_object,...]
     subjects_lacking_in_teachers = []
     teaching_dict = {}
     # create a dictionary that states which teacher is teaching what class {(grade.name, subject): teacher.name}
@@ -63,6 +64,7 @@ def create_schedules(teachers, grades, classrooms, subjects):
 
     print(f'{teachers}\n{grades}\n{classrooms}\n{subjects}')
     print('$$$$$$$$$$$$$$$$$$$$$',grades[5].name,grades[5].hours_per_subject)
+
     def check_if_enough_hours(subject):
 
         hours_of_subject_for_grades = [(grade.name, grade.hours_per_subject[subject],print('##################',grade.name,grade.hours_per_subject)) for grade in grades.values() if subject in grade.hours_per_subject]
@@ -86,7 +88,7 @@ def create_schedules(teachers, grades, classrooms, subjects):
                     grade_hours_of_subject = 0
                     break
             if grade_hours_of_subject != 0:
-                subjects_lacking_in_teachers.append((subject, grade_name))
+                subjects_lacking_in_teachers.append(subject)
         return subjects_lacking_in_teachers
 
     for subject in subjects.values():
@@ -100,33 +102,43 @@ def create_schedules(teachers, grades, classrooms, subjects):
 
             return
     print(teaching_dict)
-    adjusted_teachers = [teacher for teacher in teachers.values()]
-    adjusted_grades = [grade for grade in grades.values()]
-    adjusted_classrooms = [classroom for classroom in classrooms.values()]
-    adjusted_subjects = {subject.name: subject for subject_id, subject in subjects.items()}
+    adjusted_teachers_dict = {teacher.name: teacher for teacher in teachers.values()}
+    adjusted_grades_dict = {grade.name: grade for grade in grades.values()}
+    adjusted_classrooms_dict = {classroom.name: classroom for classroom in classrooms.values()}
+    adjusted_subjects_dict = {subject.name: subject for subject_id, subject in subjects.items()}
 
-
-    print(f'{adjusted_teachers}\n{adjusted_grades}\n{adjusted_classrooms}\n{adjusted_subjects}')
+    print(f'{adjusted_teachers_dict}\n{adjusted_grades_dict}\n{adjusted_classrooms_dict}\n{adjusted_subjects_dict}')
 
     missing_periods = []
 
-    def find_available_teacher(grade_name, teachers, subject, day, hour):
+    def find_available_subject(grade_object, day, hour):
         # Find a teacher who teaches the subject, teaches the given class and is available at the given day and hour
-        for teacher in teachers:
-            if (teacher.subject == subject
+        available_teachers = []
+        subjects_of_grade_dict = {grade_and_subject_tup: teacher_name for grade_and_subject_tup, teacher_name in teaching_dict.items() if grade_and_subject_tup[0] == grade_object.name}
+        print('SUBS', subjects_of_grade_dict)
+
+        for grade_and_subject_tup, teacher_name in subjects_of_grade_dict.items():
+            teacher = [teacher for teacher in adjusted_teachers_dict.values() if teacher.name == teacher_name][0]
+            subject_instances_scheduled = [lesson for lesson, grade in scheduled_lessons_dict.items()
+                         if lesson.subject == teacher.subject and grade.name == grade_object.name]
+            is_teacher_available = [lesson for lesson in scheduled_lessons_dict.keys()
+                                    if lesson.day == day and lesson.hour == hour and lesson.teacher == teacher]
+            max_in_a_day = adjusted_subjects_dict[teacher.subject].max_hours_in_a_day
+            required_per_week = grade_object.hours_per_subject[teacher.subject]
+            print(len(teacher.work_hours[day]), hour, len(subject_instances_scheduled), required_per_week)
+            if (((len(teacher.work_hours[day]) > hour) and is_teacher_available == []
                     and
-                    (not teaching_dict[(grade_name, subject)]
-                     or
-                     teaching_dict[(grade_name, subject)] == teacher.name)):
+                    len(subject_instances_scheduled) < required_per_week)
+                    and
+                    len([lesson for lesson in subject_instances_scheduled if lesson.day == day]) < max_in_a_day):
+                available_teachers.append(teacher)
+        return available_teachers
 
-                if len(teacher.work_hours) >= day + 1 and len(teacher.work_hours[day]) >= hour + 1 and teacher.work_hours[day][hour]:
-                    return teacher
-        missing_periods.append((grade_name, subject, day, hour))
-        return None
-
-    def find_available_classroom(classrooms, day, hour):
+    def find_available_classroom(grade_name, day, hour):
         # Find a classroom that is available at the given day and hour
-        for classroom in classrooms:
+        if adjusted_classrooms_dict[grade_name].available[day][hour]:
+            return adjusted_classrooms_dict[grade_name]
+        for classroom in adjusted_classrooms_dict.values():
             if classroom.available[day][hour]:
                 return classroom
         return None
@@ -146,19 +158,89 @@ def create_schedules(teachers, grades, classrooms, subjects):
     alternative: make another dict to keep track of scheduled lessons instead of removing them from the "teaching dict" dict
      and make the while condition depend on the length of the new dict, if its length is the same as "teaching dict" it stops.'''
 
-    while len(assigned_lessons_dict) != len(teaching_dict):
-        for day in range(6):
-            for grade in adjusted_grades:
+    while (len(scheduled_lessons_dict) != len(teaching_dict)) and trys == 0:
+        trys += 1
+        for grade in adjusted_grades_dict.values():
+            for day in range(6):
+                if day == 5:
+                    hours_to_schedule = grade.max_hours_per_friday
+                else:
+                    hours_to_schedule = grade.max_hours_per_day
+                for hour in range(hours_to_schedule):
+                    room_of_lesson = find_available_classroom(grade.name, day, hour)
+                    possible_subjects_of_lesson = find_available_subject(grade, day, hour)
+                    if len(possible_subjects_of_lesson) == 0:
+                        print('!@#$%^&*()!@#$%^&*()!@#$%^&*()_!@#$%^&*()_, NO AVAILABLE TEACHER')
+                        missing_periods.append((day,hour,grade.name))
+                        continue
+                    if hour != 0:
+                        todays_lessons = [lesson for lesson in scheduled_lessons_dict.keys() if lesson.day == day]
+                        previous_lesson_subject = [lesson.subject for lesson in todays_lessons if lesson.hour == hour-1][0]
 
+                        times_previous_lesson_appeared_today = sum(
+                            [1 for lesson in todays_lessons if lesson.subject == previous_lesson_subject]
+                        )
+
+                        if (
+                                times_previous_lesson_appeared_today < adjusted_subjects_dict[previous_lesson_subject].max_hours_in_a_day
+                                and previous_lesson_subject in [teacher.subject for teacher in possible_subjects_of_lesson]
+                        ):
+                              teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson
+                                                 if teacher.subject == previous_lesson_subject
+                                                 ][0]
+                        else:
+                            teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson][0]
+                    else:
+                        teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson][0]
+                    scheduled_lessons_dict[Lesson(teacher_of_lesson, room_of_lesson, day, hour)] = grade
+                    print('SCHEDULED LESSON!!!!!!!!!!!!',teacher_of_lesson.name,room_of_lesson.name,day,hour,grade.name)
+        print('END OF WHILE',trys,missing_periods)
+    print(missing_periods)
+    for lesson, grade in scheduled_lessons_dict.items():
+
+        adjusted_grades_dict[grade.name].change_hour(lesson, 'add')
 
     with open('check1.txt', 'w') as f:
-        f.write(json.dumps([[[hour.subject if hour else None for hour in day] for day in schedule] for schedule in
-                            [grade.schedule for grade in adjusted_grades]]))
+        for grade in adjusted_grades_dict.values():
+            f.write(str(grade.hours_per_subject))
+            f.write('\n')
+            for e, day in enumerate(grade.schedule):
+                f.write(str(e))
+                f.write('\n')
+                for hour in day:
+                    if hour:
+                        f.write(f'{hour.subject}, ')
+                f.write('\n')
     print([[[hour.subject if hour else None for hour in day] for day in schedule] for schedule in
-           [grade.schedule for grade in adjusted_grades]])
+           [grade.schedule for grade in adjusted_grades_dict.values()]])
     print(grades)
-    print(adjusted_grades)
+    print(adjusted_grades_dict)
     print("missing::::::", missing_periods)
+    for teacher in adjusted_teachers_dict.values():
+        print('checlklhsbdfbvlkjnsdf;jbhsd;ibsg;ijbr',teacher.name, sum(1 for lesson in scheduled_lessons_dict if lesson.teacher.name == teacher.name), sum([sum([1 for hour in day]) for day in teacher.work_hours]))
+
+    formated_lessons_list = []
+    for lesson, scheduled_grade in scheduled_lessons_dict.items():
+        hour = lesson.hour
+        day = lesson.day
+        classroom_id = [id for id, classroom in classrooms.items() if classroom.name == lesson.classroom.name][0]
+        teacher_id = [id for id, teacher in teachers.items() if teacher.name == lesson.teacher.name][0]
+        grade_id = [id for id, grade in grades.items() if grade.name == scheduled_grade.name][0]
+        print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&',grade_id,teacher_id,classroom_id)
+        formated_lessons_list.append((hour, day, classroom_id, teacher_id, grade_id))
+
+    with open('jsons/lessons.json', 'w') as f:
+        f.write(json.dumps(formated_lessons_list))
+    file_size = str(path.getsize('jsons/lessons.json'))
+    size_text = f'{Enum.ADD_LESSONS},{file_size}'
+    client_socket.send(size_text.encode())
+
+    with open('jsons/lessons.json', 'r') as g:
+        lessons = g.read()
+    print('poiuytyuiopoiuytrtyuiopoiuytyuiopoiuytyuio', lessons)
+    client_socket.send(lessons.encode())
+    if client_socket.recv(1024).decode() == Enum.SUCCESS:
+        messagebox.showinfo('Schedule status', 'Schedules created successfully!')
     return grades
 
 
@@ -262,12 +344,12 @@ def add_grade(grade_name_entry, hours_per_subject_dict, window, parent):
     from os import path
     grade_name = grade_name_entry.get().title()
 
-    with open('client/jsons/hours_per_subject.json', 'w') as f:
+    with open('jsons/hours_per_subject.json', 'w') as f:
         json.dump(hours_per_subject_dict, f)
-    file_size = str(path.getsize('client/jsons/hours_per_subject.json'))
+    file_size = str(path.getsize('jsons/hours_per_subject.json'))
     size_text = f'{Enum.ADD_GRADE},{file_size}'
     client_socket.send(size_text.encode())
-    with open('client/jsons/hours_per_subject.json', 'r') as f:
+    with open('jsons/hours_per_subject.json', 'r') as f:
         hours_per_subject_str = f.read()
 
     grade = f'{grade_name}|{hours_per_subject_str}'

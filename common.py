@@ -4,6 +4,7 @@ class Enum:
     SUCCESS = 'success'
     FAIL = 'failure'
     EXISTS = 'exists'
+    ADD_LESSONS = 'add_lessons'
     ADD_SUBJECT = 'add_subject'
     GET_SUBJECTS = 'get_subjects'
     ADD_TEACHER = 'add_teacher'
@@ -39,12 +40,12 @@ class Teacher:
 
 
 class Lesson:
-    def __init__(self, teacher: Teacher):
+    def __init__(self, teacher: Teacher, classroom: Classroom=None, day: int=None, hour: int=None):
         self.teacher = teacher
         self.subject: str = teacher.subject
-        self.hour: int = None
-        self.day: int = None
-        self.classroom: Classroom = None
+        self.hour: int = hour
+        self.day: int = day
+        self.classroom: Classroom = classroom
 
     def assign(self, day, hour, classroom):
         self.hour = hour
@@ -57,25 +58,28 @@ class Grade:
     def __init__(self, name: str, max_hours_per_day: int, max_hours_per_friday: int, hours_per_subject: dict[str: int]):  # dict consists of subject_name: hours_to_study_per_week
         self.name = name
         self.hours_per_subject = hours_per_subject
+        self.max_hours_per_day = max_hours_per_day
+        self.max_hours_per_friday = max_hours_per_friday
         self.schedule: list[list[Lesson]] = []
         for day in range(5):  # Sunday through wednesday
             default_day_schedule = [None for hour in range(max_hours_per_day)]  # hours 0 through 11
             self.schedule.append(default_day_schedule)
         self.schedule.append([None for i in range(max_hours_per_friday)])
 
-    def change_hour(self, lesson: Lesson, day: int, hour: int, action: str):
+    def change_hour(self, lesson: Lesson, action: str):
 
         if action.lower() == "remove":
-            self.hours_per_subject[self.schedule[day][hour].subject] += 1
-            lesson.teacher.work_hours[day][hour] = True
-            self.schedule[day][hour] = None
-            lesson.classroom.available[day][hour] = True
+            self.hours_per_subject[self.schedule[lesson.day][lesson.hour].subject] += 1
+            lesson.teacher.work_hours[lesson.day][lesson.hour] = True
+            self.schedule[lesson.day][lesson.hour] = None
+            lesson.classroom.available[lesson.day][lesson.hour] = True
 
         elif action.lower() == "add":
-            self.schedule[day][hour] = lesson
-            self.hours_per_subject[lesson.subject] = int(self.hours_per_subject[lesson.subject])-1
-            lesson.teacher.work_hours[day][hour] = False
-            lesson.classroom.available[day][hour] = False
+            self.schedule[lesson.day][lesson.hour] = lesson
+            print('ADDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',self.name, self.schedule[lesson.day][lesson.hour])
+
+            lesson.teacher.work_hours[lesson.day][lesson.hour] = False
+            lesson.classroom.available[lesson.day][lesson.hour] = False
         else:
             print('Invalid action')
 

@@ -35,12 +35,19 @@ def login(data, client):
 
 
 def add_lessons(data, client):
-    from db_handle import insert_dataframe
+    from db_handle import insert_dataframe, update_table
     file_size = data[1]
-    lessons_json = client.recv(int(file_size)).decode()
+    lessons_json = client.recv(int(file_size)).decode().split('|')
     print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@', lessons_json)
-    lessons = json.loads(lessons_json)
+
+    lessons = json.loads(lessons_json[0])
+    print('llllllllllllllllllllllllllllll', lessons)
+    teachers = json.loads(lessons_json[1])
+    print('ttttttttttttttttttttttttttttttttttttttttttttttttttttt', teachers)
+    classrooms = json.loads(lessons_json[2])
+    print('cccccccccccccccccccccccccccccccccccccccccccccccc', classrooms)
     df = {'hour':[], 'day':[], 'classroom_id':[], 'teacher_id':[], 'grade_id':[]}
+
     for lesson in lessons:
         hour = lesson[0]
         day = lesson[1]
@@ -49,7 +56,21 @@ def add_lessons(data, client):
         grade_id = lesson[4]
         df['hour'].append(hour); df['day'].append(day); df['classroom_id'].append(classroom_id); df['teacher_id'].append(teacher_id); df['grade_id'].append(grade_id)
     insert_dataframe(df)
+
+    for teacher_id, teacher_work_hours in teachers.items():
+        update_table('users', {'work_hours_json': json.dumps(teacher_work_hours)}, f'id = {teacher_id}')
+
+    for classroom_id, classroom_availability in classrooms.items():
+        update_table('classrooms', {'available': json.dumps(classroom_availability)}, f'id = {classroom_id}')
     client.send(Enum.SUCCESS.encode())
+
+
+def get_and_send_send_lessons(client):
+    from db_handle import join_lessons
+    lessons = join_lessons()
+    file_size = str(len(json.dumps(lessons).encode()))
+    client.send(file_size.encode())
+    client.send(json.dumps(lessons).encode())
 
 
 def add_subject(data, client):
@@ -66,12 +87,9 @@ def get_and_send_subjects(client):
     from db_handle import select_data
     subjects: list[tuple] = select_data('subjects', '*')
     if subjects:
-        with open('jsons/subjects.json', 'w') as f:
-            json.dump(subjects, f)
-        file_size = str(os.path.getsize('jsons/subjects.json'))
+        file_size = str(len(json.dumps(subjects).encode()))
         client.send(file_size.encode())
-        with open('jsons/subjects.json', 'rb') as f:
-            client.send(f.read())
+        client.send(json.dumps(subjects).encode())
     else:
         client.send(b'no subjects found')
 
@@ -85,13 +103,7 @@ def add_teacher(data, client):
         work_hours.append([True for i in range(int(data[5]))])
         work_hours[int(data[3])-1] = [False for i in range(len(work_hours[int(data[3])-1]))]
 
-        with open('jsons/work_hours.json', 'w') as f:
-            json.dump(work_hours, f)
-
-        with open('jsons/work_hours.json', 'r') as f:
-            work_hours_json = f.read()
-
-        insert_data('users', 'name, is_teacher, password, work_hours_json, subject_id', (data[1], 'true', encode_password(data[6]), work_hours_json, data[2]))
+        insert_data('users', 'name, is_teacher, password, work_hours_json, subject_id', (data[1], 'true', encode_password(data[6]), json.dumps(work_hours), data[2]))
         new_teacher_id = str(select_data('users', 'id', {'name': data[1]})[0][0])
         client.send(new_teacher_id.encode())
 
@@ -100,12 +112,9 @@ def get_and_send_teachers(client):
     from db_handle import select_data
     teachers: list[tuple] = select_data('users AS u JOIN public.subjects AS s on u.subject_id = s.id', 'u.*, s.name as subject_name')
     if teachers:
-        with open('jsons/teachers.json', 'w') as f:
-            json.dump(teachers, f)
-        file_size = str(os.path.getsize('jsons/teachers.json'))
+        file_size = str(len(json.dumps(teachers).encode()))
         client.send(file_size.encode())
-        with open('jsons/teachers.json', 'rb') as f:
-            client.send(f.read())
+        client.send(json.dumps(teachers).encode())
     else:
         client.send(b'no teachers found')
 
@@ -132,13 +141,10 @@ def get_and_send_grades(client):
     grades: list[tuple] = select_data('Grades', '*')
 
     if grades:
-        with open('jsons/grades.json', 'w') as f:
-            json.dump(grades, f)
-            print(grades)
-        file_size = str(os.path.getsize('jsons/grades.json'))
+        print(grades)
+        file_size = str(len(json.dumps(grades).encode()))
         client.send(file_size.encode())
-        with open('jsons/grades.json', 'rb') as f:
-            client.send(f.read())
+        client.send(json.dumps(grades).encode())
     else:
         client.send(b'no grades found')
 
@@ -155,13 +161,8 @@ def add_classroom(data, client):
             client.send(Enum.SUCCESS.encode())
 
     else:
-        with open('jsons/available_hours.json', 'w') as f:
-            json.dump(available, f)
 
-        with open('jsons/available_hours.json', 'r') as f:
-            available = f.read()
-
-        insert_data('classrooms', 'name, available', (classroom_name, available))
+        insert_data('classrooms', 'name, available', (classroom_name, json.dumps(available)))
         client.send(Enum.SUCCESS.encode())
 
 
@@ -171,19 +172,19 @@ def get_and_send_classrooms(client):
     classrooms: list[tuple] = select_data('Classrooms', '*')
 
     if classrooms:
-        with open('jsons/classrooms.json', 'w') as f:
+        with open('server/jsons/classrooms.json', 'w') as f:
             json.dump(classrooms, f)
             print(classrooms)
-        file_size = str(os.path.getsize('jsons/classrooms.json'))
+        file_size = str(len(json.dumps(classrooms).encode()))
         client.send(file_size.encode())
-        with open('jsons/classrooms.json', 'rb') as f:
-            client.send(f.read())
+        client.send(json.dumps(classrooms).encode())
     else:
         client.send(b'no classrooms found')
 
 
 def flask_login(data, client):
     from db_handle import select_data
+    print(data)
     if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
         client.send(Enum.SUCCESS.encode())
     else:
@@ -198,6 +199,15 @@ def flask_handle(client_object):
 
         if data[0] == Enum.LOGIN_INFO:
             flask_login(data, client_object)
+
+        elif data[0] == Enum.GET_LESSONS:
+            get_and_send_send_lessons(client_object)
+
+        elif data[0] == Enum.GET_GRADES:
+            get_and_send_grades(client_object)
+
+        elif data[0] == Enum.GET_TEACHERS:
+            get_and_send_teachers(client_object)
 
 
 def client_handle(client_object):

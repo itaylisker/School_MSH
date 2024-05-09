@@ -187,15 +187,16 @@ def create_schedules(teachers, grades, classrooms, subjects):
                         ):
                               teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson
                                                  if teacher.subject == previous_lesson_subject
-                                                 ][0]
+                                                ][0]
                         else:
                             teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson][0]
                     else:
                         teacher_of_lesson = [teacher for teacher in possible_subjects_of_lesson][0]
                     scheduled_lessons_dict[Lesson(teacher_of_lesson, room_of_lesson, day, hour)] = grade
-                    print('SCHEDULED LESSON!!!!!!!!!!!!',teacher_of_lesson.name,room_of_lesson.name,day,hour,grade.name)
-        print('END OF WHILE',trys,missing_periods)
+                    print('SCHEDULED LESSON!!!!!!!!!!!!', teacher_of_lesson.name, room_of_lesson.name, day, hour, grade.name)
+        print('END OF WHILE', trys, missing_periods)
     print(missing_periods)
+
     for lesson, grade in scheduled_lessons_dict.items():
 
         adjusted_grades_dict[grade.name].change_hour(lesson, 'add')
@@ -220,25 +221,31 @@ def create_schedules(teachers, grades, classrooms, subjects):
         print('checlklhsbdfbvlkjnsdf;jbhsd;ibsg;ijbr',teacher.name, sum(1 for lesson in scheduled_lessons_dict if lesson.teacher.name == teacher.name), sum([sum([1 for hour in day]) for day in teacher.work_hours]))
 
     formated_lessons_list = []
+    changed_teachers = {}
+    changed_classrooms = {}
     for lesson, scheduled_grade in scheduled_lessons_dict.items():
         hour = lesson.hour
         day = lesson.day
         classroom_id = [id for id, classroom in classrooms.items() if classroom.name == lesson.classroom.name][0]
         teacher_id = [id for id, teacher in teachers.items() if teacher.name == lesson.teacher.name][0]
         grade_id = [id for id, grade in grades.items() if grade.name == scheduled_grade.name][0]
+        changed_teachers[teacher_id] = lesson.teacher.work_hours
+        changed_classrooms[classroom_id] = lesson.classroom.available
         print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&',grade_id,teacher_id,classroom_id)
         formated_lessons_list.append((hour, day, classroom_id, teacher_id, grade_id))
 
-    with open('jsons/lessons.json', 'w') as f:
-        f.write(json.dumps(formated_lessons_list))
-    file_size = str(path.getsize('jsons/lessons.json'))
+    with open('jsons/lessons_and_changes.json', 'w') as f:
+        f.write(f'{json.dumps(formated_lessons_list)}\n')
+        f.write(f'{json.dumps(changed_teachers)}\n')
+        f.write(json.dumps(changed_classrooms))
+
+    file_size = str(path.getsize('jsons/lessons_and_changes.json'))
     size_text = f'{Enum.ADD_LESSONS},{file_size}'
     client_socket.send(size_text.encode())
 
-    with open('jsons/lessons.json', 'r') as g:
-        lessons = g.read()
-    print('poiuytyuiopoiuytrtyuiopoiuytyuiopoiuytyuio', lessons)
-    client_socket.send(lessons.encode())
+    lessons_and_changes = f'{json.dumps(formated_lessons_list)}|{json.dumps(changed_teachers)}|{json.dumps(changed_classrooms)}'
+    print('poiuytyuiopoiuytrtyuiopoiuytyuiopoiuytyuio', lessons_and_changes)
+    client_socket.send(lessons_and_changes.encode())
     if client_socket.recv(1024).decode() == Enum.SUCCESS:
         messagebox.showinfo('Schedule status', 'Schedules created successfully!')
     return grades

@@ -5,6 +5,7 @@ class Enum:
     FAIL = 'failure'
     EXISTS = 'exists'
     ADD_LESSONS = 'add_lessons'
+    GET_LESSONS = 'get_lessons'
     ADD_SUBJECT = 'add_subject'
     GET_SUBJECTS = 'get_subjects'
     ADD_TEACHER = 'add_teacher'
@@ -40,7 +41,7 @@ class Teacher:
 
 
 class Lesson:
-    def __init__(self, teacher: Teacher, classroom: Classroom=None, day: int=None, hour: int=None):
+    def __init__(self, teacher: Teacher, classroom: Classroom = None, day: int = None, hour: int = None):
         self.teacher = teacher
         self.subject: str = teacher.subject
         self.hour: int = hour
@@ -76,8 +77,6 @@ class Grade:
 
         elif action.lower() == "add":
             self.schedule[lesson.day][lesson.hour] = lesson
-            print('ADDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',self.name, self.schedule[lesson.day][lesson.hour])
-
             lesson.teacher.work_hours[lesson.day][lesson.hour] = False
             lesson.classroom.available[lesson.day][lesson.hour] = False
         else:

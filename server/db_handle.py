@@ -6,11 +6,11 @@ from common import encode_password
 
 
 def connect():
-    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='postgres')
+    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
 
 
 def insert_dataframe(data: dict):
-    conn_string = 'postgresql://postgres:postgres@127.0.0.1/postgres'
+    conn_string = 'postgresql://postgres:1098qpoi@127.0.0.1/postgres'
 
     db = create_engine(conn_string)
     conn = db.connect()
@@ -24,6 +24,31 @@ def insert_dataframe(data: dict):
     conn.autocommit = True
 
     # conn.commit()
+    conn.close()
+
+
+def join_lessons():
+
+    """
+    :return: list of tuples, each tuple contains the following:
+    [0]-->hour of lesson,
+    [1]-->day of lesson,
+    [2]-->name of classroom of lesson,
+    [3]-->name of teacher of lesson,
+    [4]-->name of subject of lesson,
+    [5]-->name of grade of lesson
+    """
+    conn = connect()
+    with conn.cursor() as cursor:
+        try:
+            cursor.execute('''SELECT lessons.hour, lessons.day, classrooms.name as classroom_name, users.name as teacher_name, subjects.name as subject , grades.name as grade_name FROM lessons
+                                JOIN users ON lessons.teacher_id = users.id
+                                JOIN classrooms ON lessons.classroom_id = classrooms.id
+                                JOIN grades ON lessons.grade_id = grades.id
+                                JOIN subjects ON subjects.id = users.subject_id''')
+            return cursor.fetchall()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
     conn.close()
 
 
@@ -49,7 +74,7 @@ def delete_data(table: str, where: dict):
             s = ''
             for i in where.keys():
                 if i == 'AND':
-                    s += ' AND'
+                    s += ' AND '
                 else:
                     s += f'{i}=%s'
             data = tuple([i for i in where.values() if i])
@@ -69,10 +94,10 @@ def select_data(From: str, select: str, where: dict = None):
                 s = ''
                 for i in where.keys():
                     if i == 'AND':
-                        s += ' AND'
+                        s += ' AND '
                     else:
                         s += f'{i}=%s'
-                data = tuple([i for i in where.values()])
+                data = tuple([i for i in where.values() if i])
                 cursor.execute(f'''SELECT {select} FROM public.{From} WHERE {s};''', data)
                 return cursor.fetchall()
             else:
@@ -80,19 +105,20 @@ def select_data(From: str, select: str, where: dict = None):
                 return cursor.fetchall()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
+            print(f'''SELECT {select} FROM public.{From} WHERE {s};''', data)
     conn.close()
 
 
-def update_table(table_name, update_values, where_clause):
-    try:
-        # Connect to the PostgreSQL database
-        conn = connect()
+def update_table(table_name: str, update_values: dict, where_clause: str):
+    # Connect to the PostgreSQL database
+    conn = connect()
 
-        # Create a cursor object using the cursor() method
-        cursor = conn.cursor()
+    # Create a cursor object using the cursor() method
+    cursor = conn.cursor()
+    try:
 
         # Construct the UPDATE query
-        update_query = f"UPDATE {table_name} SET "
+        update_query = f"UPDATE public.{table_name} SET "
 
         # Append set values to the update query
         for column, value in update_values.items():
@@ -101,10 +127,10 @@ def update_table(table_name, update_values, where_clause):
         update_query += f" WHERE {where_clause};"
 
         # Construct the parameterized values
-        update_values_list = [value for value in update_values.values()]
-
+        update_values_tuple = tuple([value for value in update_values.values()])
+        print(update_query, update_values_tuple)
         # Execute the UPDATE query
-        cursor.execute(update_query, update_values_list)
+        cursor.execute(update_query, update_values_tuple)
 
         # Commit the transaction
         conn.commit()

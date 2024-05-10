@@ -234,16 +234,12 @@ def create_schedules(teachers, grades, classrooms, subjects):
         print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&',grade_id,teacher_id,classroom_id)
         formated_lessons_list.append((hour, day, classroom_id, teacher_id, grade_id))
 
-    with open('jsons/lessons_and_changes.json', 'w') as f:
-        f.write(f'{json.dumps(formated_lessons_list)}\n')
-        f.write(f'{json.dumps(changed_teachers)}\n')
-        f.write(json.dumps(changed_classrooms))
-
-    file_size = str(path.getsize('jsons/lessons_and_changes.json'))
+    lessons_and_changes = f'{json.dumps(formated_lessons_list)}|{json.dumps(changed_teachers)}|{json.dumps(changed_classrooms)}'
+    file_size = str(len(lessons_and_changes.encode()))
     size_text = f'{Enum.ADD_LESSONS},{file_size}'
     client_socket.send(size_text.encode())
 
-    lessons_and_changes = f'{json.dumps(formated_lessons_list)}|{json.dumps(changed_teachers)}|{json.dumps(changed_classrooms)}'
+
     print('poiuytyuiopoiuytrtyuiopoiuytyuiopoiuytyuio', lessons_and_changes)
     client_socket.send(lessons_and_changes.encode())
     if client_socket.recv(1024).decode() == Enum.SUCCESS:
@@ -353,13 +349,10 @@ def add_grade(grade_name_entry, hours_per_subject_dict, window, parent):
 
     with open('jsons/hours_per_subject.json', 'w') as f:
         json.dump(hours_per_subject_dict, f)
-    file_size = str(path.getsize('jsons/hours_per_subject.json'))
+    file_size = str(len(json.dumps(hours_per_subject_dict).encode()))
     size_text = f'{Enum.ADD_GRADE},{file_size}'
     client_socket.send(size_text.encode())
-    with open('jsons/hours_per_subject.json', 'r') as f:
-        hours_per_subject_str = f.read()
-
-    grade = f'{grade_name}|{hours_per_subject_str}'
+    grade = f'{grade_name}|{json.dumps(hours_per_subject_dict)}'
     client_socket.send(grade.encode())
     response = client_socket.recv(1024).decode()
     if response == Enum.EXISTS:

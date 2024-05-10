@@ -172,9 +172,6 @@ def get_and_send_classrooms(client):
     classrooms: list[tuple] = select_data('Classrooms', '*')
 
     if classrooms:
-        with open('server/jsons/classrooms.json', 'w') as f:
-            json.dump(classrooms, f)
-            print(classrooms)
         file_size = str(len(json.dumps(classrooms).encode()))
         client.send(file_size.encode())
         client.send(json.dumps(classrooms).encode())

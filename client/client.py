@@ -201,6 +201,7 @@ def create_schedules(teachers, grades, classrooms, subjects):
 
         adjusted_grades_dict[grade.name].change_hour(lesson, 'add')
 
+
     with open('check1.txt', 'w') as f:
         for grade in adjusted_grades_dict.values():
             f.write(str(grade.hours_per_subject))
@@ -218,6 +219,7 @@ def create_schedules(teachers, grades, classrooms, subjects):
     print(adjusted_grades_dict)
     print("missing::::::", missing_periods)
     for teacher in adjusted_teachers_dict.values():
+        print(teacher.work_hours)
         print('checlklhsbdfbvlkjnsdf;jbhsd;ibsg;ijbr',teacher.name, sum(1 for lesson in scheduled_lessons_dict if lesson.teacher.name == teacher.name), sum([sum([1 for hour in day]) for day in teacher.work_hours]))
 
     formated_lessons_list = []

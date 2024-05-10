@@ -6,11 +6,11 @@ from common import encode_password
 
 
 def connect():
-    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
+    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='postgres')
 
 
 def insert_dataframe(data: dict):
-    conn_string = 'postgresql://postgres:1098qpoi@127.0.0.1/postgres'
+    conn_string = 'postgresql://postgres:postgres@127.0.0.1/postgres'
 
     db = create_engine(conn_string)
     conn = db.connect()
@@ -73,10 +73,8 @@ def delete_data(table: str, where: dict):
         try:
             s = ''
             for i in where.keys():
-                if i == 'AND':
-                    s += ' AND '
-                else:
-                    s += f'{i}=%s'
+                s += f'{i}=%s AND '
+            s = s[:-5]
             data = tuple([i for i in where.values() if i])
             cursor.execute(f'''DELETE FROM public.{table} WHERE {s};''', data)
             conn.commit()
@@ -93,10 +91,8 @@ def select_data(From: str, select: str, where: dict = None):
             if where:
                 s = ''
                 for i in where.keys():
-                    if i == 'AND':
-                        s += ' AND '
-                    else:
-                        s += f'{i}=%s'
+                    s += f'{i}=%s AND '
+                s = s[:-5]
                 data = tuple([i for i in where.values() if i])
                 cursor.execute(f'''SELECT {select} FROM public.{From} WHERE {s};''', data)
                 return cursor.fetchall()

@@ -9,7 +9,6 @@ client_socket.connect(('127.0.0.1', 5050))
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
-client_socket.send(f'{Enum.FLASK}'.encode())
 client_socket.send(f'{Enum.GET_LESSONS}'.encode())
 file_size = client_socket.recv(1024).decode()
 lessons = json.loads(client_socket.recv(int(file_size)).decode())
@@ -32,7 +31,8 @@ for lesson in lessons:
     grade = lesson[5]
     lessons_dict_by_grade[grade][hour].append(lesson[:5])
     new_lesson = lesson[:3]
-    new_lesson.append(lesson[4:])
+    new_lesson.append(lesson[4])
+    new_lesson.append(lesson[5])
     lessons_dict_by_teacher[teacher][hour].append(new_lesson)
 
 for key in lessons_dict_by_grade.keys():
@@ -66,9 +66,10 @@ def login_page():
 
         client_socket.send(credentials.encode())
         cred_check = client_socket.recv(1024).decode()
-
+        print('got here: ', cred_check)
         if cred_check == Enum.SUCCESS:
-            return redirect(url_for("teacher_schedule"))
+            print('success!!')
+            return teacher_schedule(username)
         else:
             error = 'Invalid username or password. Please try again.'
             return render_template('login_page.html', error=error)
@@ -77,8 +78,8 @@ def login_page():
 
 
 @app.route('/schedule', methods=['GET', 'POST'])
-def teacher_schedule():
-    selected_teacher = teachers_names_list[1]
+def teacher_schedule(username):
+    selected_teacher = username
     selected_teacher_lessons = lessons_dict_by_teacher[selected_teacher]
 
     return render_template('schedule.html', lessons=selected_teacher_lessons, teacher=selected_teacher)

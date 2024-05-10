@@ -20,14 +20,18 @@ def login(data, client):
 
     if user:
         user = user[0]
-
-        if username not in user:
+        print(user)
+        print(encode_password(password))
+        if username != user[1]:
             client.send(b'Invalid username')
 
-        elif encode_password(password) in user:
-            if (True in user) and (1 not in user):
-                client.send(b'true')
-            client.send(b'admin')
+        elif encode_password(password) == user[3]:
+            print(user[2])
+            if user[2]:
+                print('got here')
+                client.send(f'{Enum.SUCCESS}'.encode())
+            elif not user[2]:
+                client.send(b'admin')
         else:
             client.send(b'Invalid password')
     else:
@@ -96,7 +100,7 @@ def get_and_send_subjects(client):
 
 def add_teacher(data, client):
     from db_handle import select_data, insert_data
-    if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
+    if select_data('users', 'id', {'name': data[1], 'is_teacher': True}):
         client.send(Enum.EXISTS.encode())
     else:
         work_hours = [[True for i in range(int(data[4]))] for day in range(5)]
@@ -127,7 +131,7 @@ def add_grade(data, client):
     grade_name = grade[0]
     hours_per_subject = grade[1]
 
-    if select_data('grades', 'name', {'name': grade_name, 'AND': None}):
+    if select_data('grades', 'name', {'name': grade_name}):
         client.send(Enum.EXISTS.encode())
 
     else:
@@ -179,47 +183,19 @@ def get_and_send_classrooms(client):
         client.send(b'no classrooms found')
 
 
-def flask_login(data, client):
-    from db_handle import select_data
-    print(data)
-    if select_data('users', 'id', {'name': data[1], 'AND': None, 'is_teacher': True}):
-        client.send(Enum.SUCCESS.encode())
-    else:
-        client.send(Enum.FAIL.encode())
-
-
-def flask_handle(client_object):
-
-    while True:
-
-        data = client_object.recv(1024).decode().split(',')
-
-        if data[0] == Enum.LOGIN_INFO:
-            flask_login(data, client_object)
-
-        elif data[0] == Enum.GET_LESSONS:
-            get_and_send_send_lessons(client_object)
-
-        elif data[0] == Enum.GET_GRADES:
-            get_and_send_grades(client_object)
-
-        elif data[0] == Enum.GET_TEACHERS:
-            get_and_send_teachers(client_object)
-
-
 def client_handle(client_object):
 
     while True:
         data = client_object.recv(1024).decode().split(',')
 
-        if data[0] == Enum.FLASK:
-            flask_handle(client_object)
-
-        elif data[0] == Enum.LOGIN_INFO:
+        if data[0] == Enum.LOGIN_INFO:
             login(data, client_object)
 
         elif data[0] == Enum.ADD_LESSONS:
             add_lessons(data, client_object)
+
+        elif data[0] == Enum.GET_LESSONS:
+            get_and_send_send_lessons(client_object)
 
         elif data[0] == Enum.ADD_SUBJECT:
             add_subject(data, client_object)

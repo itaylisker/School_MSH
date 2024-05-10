@@ -32,7 +32,7 @@
                             </td>
                             {% for day in range(6) %}
                                 {% if day < lessons[0]|length %}
-                                    <td>{{ lessons[0][day][2] }}</td>
+                                    <td>class: {{lessons[0][day][4]}} <br> classroom: {{lessons[0][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -42,7 +42,7 @@
                             <td>09:15 - 10:00</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[1]|length %}
-                                    <td>{{ lessons[1][day][2] }}</td>
+                                    <td>class: {{ lessons[1][day][4] }} <br> classroom: {{lessons[1][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -53,7 +53,7 @@
                             <td>10:20 - 11:10</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[2]|length %}
-                                    <td>{{ lessons[2][day][2] }}</td>
+                                    <td>class: {{ lessons[2][day][4] }} <br> classroom: {{lessons[2][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -63,7 +63,7 @@
                             <td>11:10 - 11:55</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[3]|length %}
-                                    <td>{{ lessons[3][day][2] }}</td>
+                                    <td>class: {{ lessons[3][day][4] }} <br> classroom: {{lessons[3][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -73,7 +73,7 @@
                             <td>12:10 - 12:55</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[4]|length %}
-                                    <td>{{ lessons[4][day][2] }}</td>
+                                    <td>class: {{ lessons[4][day][4] }} <br> classroom: {{lessons[4][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -83,7 +83,7 @@
                             <td>12:55 - 13:35</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[5]|length %}
-                                    <td>{{ lessons[5][day][2] }}</td>
+                                    <td>class: {{ lessons[5][day][4] }} <br> classroom: {{lessons[5][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -93,7 +93,7 @@
                             <td>13:50 - 14:35</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[6]|length %}
-                                    <td>{{ lessons[6][day][2] }}</td>
+                                    <td>class: {{ lessons[6][day][4] }} <br> classroom: {{lessons[6][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -103,7 +103,7 @@
                             <td>14:35 - 15:20</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[7]|length %}
-                                    <td>{{ lessons[7][day][2] }}</td>
+                                    <td>class: {{ lessons[7][day][4] }} <br> classroom: {{lessons[7][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -113,7 +113,7 @@
                             <td>15:20 - 16:00</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[8]|length %}
-                                    <td>{{ lessons[8][day][2] }}</td>
+                                    <td>class: {{ lessons[8][day][4] }} <br> classroom: {{lessons[8][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -123,6 +123,8 @@
                     </tbody>
                 </table>
             </div>
+            <a href="{{ url_for('home') }}" class="btn btn-primary">Home page</a>
+            <a href="{{ url_for('login_page') }}" class="btn btn-primary">Change user</a>
         </div>
     </div>
 

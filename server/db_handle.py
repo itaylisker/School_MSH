@@ -2,15 +2,23 @@
 import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
-from common import encode_password
 
 
 def connect():
-    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='postgres')
+    """
+
+    :return: connects to database.
+    """
+    return psycopg2.connect(host='127.0.0.1', database="postgres", user='postgres', password='1098qpoi')
 
 
 def insert_dataframe(data: dict):
-    conn_string = 'postgresql://postgres:postgres@127.0.0.1/postgres'
+    """
+
+    :param data: dataframe of data to insert into the database --> dict{column: list[data]}
+    :return: insert dataframe into the database.
+    """
+    conn_string = 'postgresql://postgres:1098qpoi@127.0.0.1/postgres'
 
     db = create_engine(conn_string)
     conn = db.connect()
@@ -53,6 +61,13 @@ def join_lessons():
 
 
 def insert_data(table: str, columns: str, data: tuple):
+    """
+
+    :param table: table name --> str
+    :param columns: column names --> str
+    :param data: data to add --> tuple(data)
+    :return: inserts the data to the specified table.
+    """
     conn = connect()
     with conn.cursor() as cursor:
         values_tuple = ','.join(['%s' for value in data])
@@ -67,6 +82,12 @@ def insert_data(table: str, columns: str, data: tuple):
 
 
 def delete_data(table: str, where: dict):
+    """
+
+    :param table: table name -->str
+    :param where: dict containing column and data to compare --> dict{column_name: data}
+    :return: deletes the data from the specified table.
+    """
     conn = connect()
     with conn.cursor() as cursor:
 
@@ -76,6 +97,7 @@ def delete_data(table: str, where: dict):
                 s += f'{i}=%s AND '
             s = s[:-5]
             data = tuple([i for i in where.values() if i])
+            print(f'''DELETE FROM public.{table} WHERE {s};''' % data)
             cursor.execute(f'''DELETE FROM public.{table} WHERE {s};''', data)
             conn.commit()
         except (Exception, psycopg2.DatabaseError) as error:
@@ -84,6 +106,13 @@ def delete_data(table: str, where: dict):
 
 
 def select_data(From: str, select: str, where: dict = None):
+    """
+
+    :param From:  table_name --> str
+    :param select: column_names --> str
+    :param where: dict containing column and data to compare --> dict{column_name: data}
+    :return: result of select query.
+    """
     conn = connect()
     with conn.cursor() as cursor:
 
@@ -93,6 +122,7 @@ def select_data(From: str, select: str, where: dict = None):
                 for i in where.keys():
                     s += f'{i}=%s AND '
                 s = s[:-5]
+                print(s)
                 data = tuple([i for i in where.values() if i])
                 cursor.execute(f'''SELECT {select} FROM public.{From} WHERE {s};''', data)
                 return cursor.fetchall()
@@ -106,6 +136,13 @@ def select_data(From: str, select: str, where: dict = None):
 
 
 def update_table(table_name: str, update_values: dict, where_clause: str):
+    """
+
+    :param table_name: table name --> str
+    :param update_values: dict containing column and data to set --> dict{column_name: data}
+    :param where_clause: where clause --> str
+    :return: updates specified values in specified table.
+    """
     # Connect to the PostgreSQL database
     conn = connect()
 

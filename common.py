@@ -1,19 +1,34 @@
+from cryptography.fernet import Fernet
+
+
 class Enum:
+
+    ADMIN = 'admin'
     FLASK = 'flask'
     LOGIN_INFO = 'login'
     SUCCESS = 'success'
     FAIL = 'failure'
     EXISTS = 'exists'
+
     ADD_LESSONS = 'add_lessons'
     GET_LESSONS = 'get_lessons'
+
     ADD_SUBJECT = 'add_subject'
     GET_SUBJECTS = 'get_subjects'
+    DELETE_SUBJECT = 'delete_subject'
+
     ADD_TEACHER = 'add_teacher'
     GET_TEACHERS = 'get_teachers'
+    DELETE_TEACHER = 'delete_teacher'
+
     ADD_GRADE = 'add_grade'
+    UPDATE_GRADES = 'update_grades'
     GET_GRADES = 'get_grades'
+    DELETE_GRADE = 'delete_grade'
+
     ADD_CLASSROOM = 'add_classroom'
     GET_CLASSROOMS = 'get_classrooms'
+    OPEN_SCHEDULE = 'open_schedule'
 
 
 class Classroom:
@@ -83,7 +98,18 @@ class Grade:
             print('Invalid action')
 
 
-# TODO: think of an encryption that isn't hash
 def encode_password(password):
     import hashlib
     return hashlib.md5(password.encode()).hexdigest()
+
+
+key = b'W8sEY6zLN2oMtz6HShYYwdL2sIU8gFm48bK7zYsTOI4='
+cipher = Fernet(key)
+
+
+def encrypt_message(message):
+    return cipher.encrypt(message.encode())
+
+
+def decrypt_message(encrypted_message):
+    return cipher.decrypt(encrypted_message).decode()

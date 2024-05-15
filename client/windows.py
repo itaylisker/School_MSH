@@ -1,7 +1,8 @@
 import tkinter as tk
-from common import Teacher, Grade, Subject
 import client
-
+from tkHyperlinkManager import HyperlinkManager
+import webbrowser
+from functools import partial
 subjects = None
 teachers = None
 grades = None
@@ -14,6 +15,7 @@ class BaseWindow(tk.Tk):
         super().__init__()
         self.title(f'{title}')
         self.geometry(f'{width}x{height}')
+        self.config(bg="#E0F2F1")
 
 
 class BaseChildWindow:
@@ -28,36 +30,38 @@ class BaseChildWindow:
 class BaseFrame(tk.Frame):
     # TODO: implement this properly into the code below
     def __init__(self, master, width=500, height=500, **kwargs):
-        super().__init__(master, **kwargs)
-        self.config(f'{width}x{height}')
+        super().__init__(master, width=width, height=height, **kwargs)
+        self.config(bg='#E0F2F1')
         self.pack()
 
 
 class LoginWindow(BaseWindow):
-
     def __init__(self):
-        super().__init__('Login', 440, 300)
+        super().__init__("Login", 440, 300)
 
-        username_label = tk.Label(self, text="Username:", font=('Helvetica bold', 26))
-        username_label.place(x=0, y=0)
+        # Create labels and entry fields
+        username_label = tk.Label(self, text="Username:", font=("Arial", 16), fg="blue")
+        username_label.place(x=20, y=20)
 
-        username_entry = tk.Entry(self, borderwidth=10, font=('Helvetica bold', 15))
-        username_entry.place(x=200, y=5)
+        username_entry = tk.Entry(self, borderwidth=2, font=("Arial", 14))
+        username_entry.place(x=150, y=20)
 
-        password_label = tk.Label(self, text="Password:", font=('Helvetica bold', 26))
-        password_label.place(x=0, y=70)
+        password_label = tk.Label(self, text="Password:", font=("Arial", 16), fg="blue")
+        password_label.place(x=20, y=70)
 
-        password_entry = tk.Entry(self, show="*", borderwidth=10, font=('Helvetica bold', 15))  # Hide the password
-        password_entry.place(x=200, y=75)
+        password_entry = tk.Entry(self, show="*", borderwidth=2, font=("Arial", 14))
+        password_entry.place(x=150, y=70)
 
-        login_button = tk.Button(self, text="Login", cursor='hand2', borderwidth=10, font=('Helvetica bold', 26), command=lambda: client.check_credentials(self, username_entry, password_entry))
-        login_button.place(x=150, y=210)
+        # Create login button
+        login_button = tk.Button(self, text="Login", cursor="hand2", font=("Arial", 16), bg="green", fg="white", command=lambda: client.check_credentials(self, username_entry, password_entry))
+        login_button.place(x=180, y=150)
 
-        self.protocol("WN_DELETE_WINDOW", lambda: client.close_connection(self))
+        # Handle window close
+        self.protocol("WM_DELETE_WINDOW", lambda: client.close_connection(self))
         self.mainloop()
 
 
-class AddSubjectFrame(tk.Frame):
+class AddSubjectFrame(BaseFrame):
 
     def __init__(self, parent):
         def previous_window():
@@ -65,7 +69,7 @@ class AddSubjectFrame(tk.Frame):
             parent.create_main_app_frame()
 
         global subjects
-        parent.winfo_children()[0].destroy()
+        parent.add_data_frame.destroy()
         super().__init__(parent)
         self.pack()
 
@@ -85,7 +89,7 @@ class AddSubjectFrame(tk.Frame):
                    client.add_subject(self.subject_name_entry, self.max_hours_entry, self, parent, subjects)).pack())
 
 
-class AddTeacherFrame(tk.Frame):
+class AddTeacherFrame(BaseFrame):
 
     def __init__(self, parent):
         def previous_window():
@@ -95,7 +99,7 @@ class AddTeacherFrame(tk.Frame):
         global subjects
         global teachers
 
-        parent.winfo_children()[0].destroy()
+        parent.add_data_frame.destroy()
         super().__init__(parent)
         self.pack()
 
@@ -157,7 +161,7 @@ class AddTeacherFrame(tk.Frame):
                           )).pack())
 
 
-class AddGradeFrame(tk.Frame):
+class AddGradeFrame(BaseFrame):
     def __init__(self, parent):
         def previous_window():
             self.destroy()
@@ -166,7 +170,7 @@ class AddGradeFrame(tk.Frame):
         global subjects
         self.parent = parent
 
-        parent.winfo_children()[0].destroy()
+        parent.add_data_frame.destroy()
         super().__init__(parent)
         self.pack()
 
@@ -175,6 +179,14 @@ class AddGradeFrame(tk.Frame):
         tk.Label(self, text="Enter grade name:").pack()
         self.grade_name_entry = tk.Entry(self)
         self.grade_name_entry.pack()
+
+        tk.Label(self, text="Enter grade's maximum hours per day:").pack()
+        self.grade_max_hours_per_day_entry = tk.Entry(self)
+        self.grade_max_hours_per_day_entry.pack()
+
+        tk.Label(self, text="Enter grade's maximum hours per friday:").pack()
+        self.grade_max_hours_per_friday_entry = tk.Entry(self)
+        self.grade_max_hours_per_friday_entry.pack()
 
         tk.Label(self, text="Choose subjects that the class will study:").pack()
 
@@ -206,7 +218,7 @@ class AddGradeFrame(tk.Frame):
                 hours_per_subject_dict[subject] = spin_list[index].get()
 
             print(hours_per_subject)
-            client.add_grade(self.grade_name_entry, hours_per_subject, subject_hours_window, self)
+            client.add_grade(self.grade_name_entry, self.grade_max_hours_per_day_entry, self.grade_max_hours_per_friday_entry, hours_per_subject, subject_hours_window, self, grades, classrooms)
 
             # go back to main window
             close()
@@ -235,38 +247,306 @@ class AddGradeFrame(tk.Frame):
         subject_hours_window.protocol("WM_DELETE_WINDOW", close)
 
 
-class MainApplicationAdmin(BaseWindow):
-    # TODO: finish commented buttons
+class DeleteSubjectFrame(BaseFrame):
+    def __init__(self, parent):
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
+
+        global subjects
+        global teachers
+        self.parent = parent
+
+        parent.delete_data_frame.destroy()
+        super().__init__(parent)
+        self.pack()
+
+        tk.Button(self, text="Back", command=previous_window).pack(padx=250)
+
+        if type(subjects) != dict:
+            subjects = client.get_subjects()
+        if type(teachers) != dict:
+            teachers = client.get_teachers()
+
+        if subjects == 'no subjects found':
+            previous_window()
+
+        elif teachers == 'no teachers found':
+
+            canvas = tk.Canvas(self)
+            scrollbar = tk.Scrollbar(self, orient='vertical', command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+            canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            for i, subject in enumerate(subjects.values()):
+
+                subject_frame = tk.Frame(scrollable_frame, bd=1, relief=tk.SOLID)
+                subject_frame.pack(fill='x', padx=10, pady=5)
+
+                tk.Label(subject_frame, text=f"Subject Name: {subject.name}", wraplength=300, anchor='w',
+                         justify='left').pack(fill='x')
+                tk.Label(subject_frame, text=f"Max Hours Of Subject In A Day: {subject.max_hours_in_a_day}",
+                         wraplength=300, anchor='w', justify='left').pack(fill='x')
+
+                if i != len(subjects) - 1:
+                    tk.Frame(scrollable_frame, height=1, bg="black").pack(fill='x', padx=10, pady=5)
+
+            scrollbar.pack(side='right', fill='y')
+            canvas.pack(side='left', fill='both', expand=True)
+            scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        else:
+
+            canvas = tk.Canvas(self)
+            scrollbar = tk.Scrollbar(self, orient='vertical', command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+            canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            for i, (subject_id, subject) in enumerate(subjects.items()):
+
+                teachers_of_subject = [teacher.name for teacher in teachers.values() if teacher.subject == subject.name]
+
+                subject_frame = tk.Frame(scrollable_frame, bd=1, relief=tk.SOLID)
+                subject_frame.pack(fill='x', padx=10, pady=5)
+
+                tk.Label(subject_frame, text=f"Subject Name: {subject.name}", wraplength=300, anchor='w',
+                         justify='left').pack(fill='x')
+                tk.Label(subject_frame, text=f"Max Hours Of Subject In A Day: {subject.max_hours_in_a_day}",
+                         wraplength=300, anchor='w', justify='left').pack(fill='x')
+
+                if teachers_of_subject:
+
+                    tk.Label(subject_frame, text=f'{subject.name} teachers: {", ".join(teachers_of_subject)}',
+                             wraplength=300, anchor='w', justify='left').pack(fill='x')
+
+                else:
+
+                    tk.Button(subject_frame, text='DELETE',
+                              command=lambda sid=subject_id, sname=subject.name: self.delete_subject(sid, sname)).pack(fill='x')
+
+                if i != len(subjects) - 1:
+                    tk.Frame(scrollable_frame, height=1, bg="black").pack(fill='x', padx=10, pady=5)
+
+            scrollbar.pack(side='right', fill='y')
+            canvas.pack(side='left', fill='both', expand=True)
+            scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    def delete_subject(self, subject_id, subject_name):
+        global grades
+        if type(grades) != dict:
+            grades = client.get_grades()
+        if grades == 'no grades found':
+            client.delete_subject(subject_id, subject_name, self, self.parent, grades, subjects)
+        else:
+            grades_studying_subject = [grade_id for grade_id, grade in grades.items() if subject_name in grade.hours_per_subject.keys()]
+            print(grades_studying_subject)
+            client.delete_subject(subject_id, subject_name, self, self.parent, grades, subjects, grades_studying_subject)
+
+
+class DeleteTeacherFrame(BaseFrame):
+    def __init__(self, parent):
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
+
+        global teachers
+        self.parent = parent
+
+        parent.delete_data_frame.destroy()
+        super().__init__(parent)
+        self.pack()
+
+        tk.Button(self, text="Back", command=previous_window).pack()
+
+        if type(teachers) != dict:
+            teachers = client.get_teachers()
+
+        if teachers == 'no teachers found':
+            previous_window()
+
+        else:
+
+            canvas = tk.Canvas(self)
+            scrollbar = tk.Scrollbar(self, orient='vertical', command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+            canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            for i, (teacher_id, teacher) in enumerate(teachers.items()):
+
+                teacher_frame = tk.Frame(scrollable_frame, bd=1, relief=tk.SOLID)
+                teacher_frame.pack(fill='x', padx=10, pady=5)
+
+                tk.Label(teacher_frame, text=f"Teacher Name: {teacher.name}", wraplength=300, anchor='w',
+                         justify='left').pack(fill='x')
+                tk.Label(teacher_frame, text=f"Teacher Subject: {teacher.subject}",
+                         wraplength=300, anchor='w', justify='left').pack(fill='x')
+
+                tk.Button(teacher_frame, text=f'DELETE',
+                          command=lambda tid=teacher_id, tname=teacher.name: self.delete_teacher(tid, tname)).pack(fill='x')
+
+                if i != len(teachers) - 1:
+                    tk.Frame(scrollable_frame, height=1, bg="black").pack(fill='x', padx=10, pady=5)
+
+            scrollbar.pack(side='right', fill='y')
+            canvas.pack(side='left', fill='both', expand=True)
+            scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    def delete_teacher(self, teacher_id, teacher_name):
+        client.delete_teacher(teacher_id, teacher_name, self, self.parent, teachers)
+
+
+class DeleteGradeFrame(BaseFrame):
+    def __init__(self, parent):
+        def previous_window():
+            self.destroy()
+            parent.create_main_app_frame()
+
+        global grades
+        self.parent = parent
+
+        parent.delete_data_frame.destroy()
+        super().__init__(parent)
+        self.pack()
+
+        tk.Button(self, text="Back", command=previous_window).pack()
+
+        if type(grades) != dict:
+            grades = client.get_grades()
+
+        if grades == 'no grades found':
+            previous_window()
+
+        else:
+
+            canvas = tk.Canvas(self)
+            scrollbar = tk.Scrollbar(self, orient='vertical', command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+            canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            for i, (grade_id, grade) in enumerate(grades.items()):
+
+                grade_frame = tk.Frame(scrollable_frame, bd=1, relief=tk.SOLID)
+                grade_frame.pack(fill='x', padx=10, pady=5)
+
+                tk.Label(grade_frame, text=f"Grade Name: {grade.name}", wraplength=300, anchor='w',
+                         justify='left').pack(fill='x')
+                tk.Label(grade_frame, text=f"Grade Hours Per Subject: {grade.hours_per_subject}",
+                         wraplength=300, anchor='w', justify='left').pack(fill='x')
+
+                tk.Button(grade_frame, text='DELETE',
+                          command=lambda: self.delete_grade(grade_id, grade.name)).pack(fill='x')
+
+                if i != len(grades) - 1:
+                    tk.Frame(scrollable_frame, height=1, bg="black").pack(fill='x', padx=10, pady=5)
+
+            scrollbar.pack(side='right', fill='y')
+            canvas.pack(side='left', fill='both', expand=True)
+            scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    def delete_grade(self, grade_id, grade_name):
+        global classrooms
+        if type(classrooms) != dict:
+            classrooms = client.get_classrooms()
+        classroom_id = [classroom_id for classroom_id, classroom in classrooms.items() if classroom.name == grade_name][0]
+        print(classroom_id)
+        client.delete_grade(grade_id, grade_name, classroom_id, self, self.parent, grades, classrooms)
+
+
+class MainApplication(BaseWindow):
     def __init__(self):
-        super().__init__('SSM - School Schedule Manager')
+        super().__init__("SSM - School Schedule Manager")
         self.create_main_app_frame()
         self.protocol("WM_DELETE_WINDOW", lambda: client.close_connection(self))
 
     def create_main_app_frame(self):
-        global teachers
-        global grades
-        global classrooms
-        global subjects
+        # Color scheme: Teal and Orange
+        bg_color = "#E0F2F1"  # Teal background
+        button_bg_color = "#FF9800"  # Orange buttons
+        button_fg_color = "white"  # White text
 
-        main_app_frame = tk.Frame(self)
-        main_app_frame.pack()
+        self.main_app_frame = tk.Frame(self)
+        self.main_app_frame.config(bg=bg_color)
+        self.main_app_frame.pack(padx=20, pady=20)
 
-        tk.Button(main_app_frame, text='Create schedules',
-                  command=lambda: client.create_schedules(teachers, grades, classrooms, subjects)).pack()
+        tk.Label(self.main_app_frame, text="School Schedule Manager", font=("Arial", 18), bg=bg_color).pack(fill="x", pady=10)
+        tk.Button(self.main_app_frame, text="View data", command=self.view_data, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.main_app_frame, text="Add data", command=self.add_data, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.main_app_frame, text="Delete data", command=self.delete_data, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
 
-        # Create buttons to open the "Add Subject" and "Add Teacher" windows
-        tk.Button(main_app_frame, text="Add subject", command=lambda: AddSubjectFrame(parent=self)).pack()
-        tk.Button(main_app_frame, text="Add teacher", command=lambda: AddTeacherFrame(parent=self)).pack()
-        tk.Button(main_app_frame, text="Add grade", command=lambda: AddGradeFrame(self)).pack()
+    def back_to_home(self, fromm):
+        if fromm == 'view':
+            self.view_data_frame.destroy()
+        elif fromm == 'add':
+            self.add_data_frame.destroy()
+        else:
+            self.delete_data_frame.destroy()
+        self.create_main_app_frame()
 
-        # Create buttons to open the "view all teachers" and "view all subjects" windows
-        tk.Button(main_app_frame, text="View all teachers", command=self.view_all_teachers).pack()
-        tk.Button(main_app_frame, text="View all subjects", command=self.view_all_subjects).pack()
-        tk.Button(main_app_frame, text='View all grades', command=self.view_all_grades).pack()
-        tk.Button(main_app_frame, text='View all classrooms', command=self.view_all_classrooms).pack()
+    def view_data(self):
+        self.main_app_frame.destroy()
+        # Color scheme: Teal and Orange
+        bg_color = "#E0F2F1"  # Teal background
+        button_bg_color = "#FF9800"  # Orange buttons
+        button_fg_color = "white"  # White text
+
+        self.view_data_frame = tk.Frame(self)
+        self.view_data_frame.config(bg=bg_color)
+        self.view_data_frame.pack(padx=20, pady=20)
+
+        tk.Label(self.view_data_frame, text="View Data", bg=bg_color, font=("Arial", 16)).pack(fill="x", pady=10)
+        tk.Button(self.view_data_frame, text="View all teachers", command=self.view_all_teachers, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.view_data_frame, text="View all subjects", command=self.view_all_subjects, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.view_data_frame, text='View all grades', command=self.view_all_grades, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.view_data_frame, text='View all classrooms', command=self.view_all_classrooms, font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.view_data_frame, text='Back to home', command=lambda: self.back_to_home('view'), font=("Arial", 14)).pack(fill="x", pady=10)
+
+    def add_data(self):
+        self.main_app_frame.destroy()
+
+        # Color scheme: Teal and Orange
+        bg_color = "#E0F2F1"  # Teal background
+        button_bg_color = "#FF9800"  # Orange buttons
+        button_fg_color = "white"  # White text
+
+        self.add_data_frame = tk.Frame(self)
+        self.add_data_frame.config(bg=bg_color)
+        self.add_data_frame.pack(padx=20, pady=20)
+
+        tk.Label(self.add_data_frame, text="Add Data", bg=bg_color, font=("Arial", 16)).pack(fill="x", pady=10)
+        tk.Button(self.add_data_frame, text="Add subject", command=lambda: AddSubjectFrame(parent=self), font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.add_data_frame, text="Add teacher", command=lambda: AddTeacherFrame(parent=self), font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.add_data_frame, text="Add grade", command=lambda: AddGradeFrame(self), font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.add_data_frame, text='Create schedules', command=lambda: client.create_schedules(grades, subjects), font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.add_data_frame, text='Back to home', command=lambda: self.back_to_home('add'), font=("Arial", 14)).pack(fill="x", pady=10)
+
+    def delete_data(self):
+        self.main_app_frame.destroy()
+
+        # Color scheme: Teal and Orange
+        bg_color = "#E0F2F1"  # Teal background
+        button_bg_color = "#FF9800"  # Orange buttons
+        button_fg_color = "white"  # White text
+
+        self.delete_data_frame = tk.Frame(self)
+        self.delete_data_frame.config(bg=bg_color)
+        self.delete_data_frame.pack(padx=20, pady=20)
+
+        tk.Button(self.delete_data_frame, text="Delete subject", command=lambda: DeleteSubjectFrame(parent=self),
+                  font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.delete_data_frame, text="Delete teacher", command=lambda: DeleteTeacherFrame(parent=self),
+                  font=("Arial", 14), bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.delete_data_frame, text="Delete grade", command=lambda: DeleteGradeFrame(self), font=("Arial", 14),
+                  bg=button_bg_color, fg=button_fg_color).pack(fill="x", pady=10)
+        tk.Button(self.delete_data_frame, text='Back to home', command=lambda: self.back_to_home('delete'),
+                  font=("Arial", 14)).pack(fill="x", pady=10)
 
     def view_all_teachers(self):
         global teachers
+
         # Create a new window to display the list of teachers
         view_window = tk.Toplevel(self)
         view_window.title("All teachers")
@@ -287,8 +567,7 @@ class MainApplicationAdmin(BaseWindow):
             # Populate the text widget with the list of teachers
             for teacher in teachers.values():
                 text_widget.insert(tk.END, f"Teacher Name: {teacher.name}\n")
-                text_widget.insert(tk.END, f"Teacher Subject: {teacher.subject}\n")
-                text_widget.insert(tk.END, f"Teacher's work hours: {teacher.work_hours}\n\n")
+                text_widget.insert(tk.END, f"Teacher Subject: {teacher.subject}\n\n")
 
     def view_all_subjects(self):
         global subjects
@@ -317,6 +596,10 @@ class MainApplicationAdmin(BaseWindow):
     def view_all_grades(self):
         global grades
         # Create a new window to display the list of grades
+
+        def callback(url):
+            webbrowser.open_new_tab(url)
+
         view_window = tk.Toplevel(self)
         view_window.title("All grades")
         view_window.config(pady=100, padx=100)
@@ -330,11 +613,14 @@ class MainApplicationAdmin(BaseWindow):
 
         if grades == 'no grades found':
             text_widget.insert(tk.END, 'No grades Found')
-
         else:
+            hyperlink = HyperlinkManager(text_widget)
+
             for grade in grades.values():
                 text_widget.insert(tk.END, f'Grade name: {grade.name}\n')
-                text_widget.insert(tk.END, f'Grade\'s hours per subject: {grade.hours_per_subject}\n\n')
+                text_widget.insert(tk.END, f'Grade\'s hours per subject: {grade.hours_per_subject}\n')
+                print(grade.name)
+                text_widget.insert(tk.END, f"{grade.name}'s schedule\n\n", hyperlink.add(partial(webbrowser.open, f"http://127.0.0.1/class/{grade.name}")))
 
     def view_all_classrooms(self):
         global classrooms
@@ -355,8 +641,7 @@ class MainApplicationAdmin(BaseWindow):
 
         else:
             for classroom in classrooms.values():
-                text_widget.insert(tk.END, f'Grade name: {classroom.name}\n')
-                text_widget.insert(tk.END, f'Grade\'s hours per subject: {classroom.available}\n\n')
+                text_widget.insert(tk.END, f'Classroom name: {classroom.name}\n')
 
 
 def get_selected_item_id(listbox, dicti):

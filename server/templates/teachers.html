@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Schedule</title>
+    <title>Teacher Schedule</title>
     <!-- Include Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center">Class Schedule: {{selected_class}}</h1>
+        <h1 class="text-center">{{selected_teacher}}'s Schedule</h1>
+        <h2 class="text-center">Subject: {{subject}}</h2>
+
         <div class="row">
             <div class="col-md-6 offset-md-3">
-                <form id="classForm" method="post">
-                    <select id="classSelector" name="selectedClass" class="form-control">
+                <form id="teacherForm" method="post">
+                    <select id="teacherSelector" name="selectedTeacher" class="form-control">
                         <!-- Populate the options dynamically based on your class names -->
-                        <option value="classSelector">Choose a class...</option>
-                        {% for class in classes %}
-                            <option value="{{class}}">{{class}}</option>
+                        <option value="teacherSelector">Choose a teacher...</option>
+                        {% for teacher in teachers %}
+                            <option value="{{teacher}}">{{teacher}}</option>
                         {% endfor %}
 
                         <!-- Add more options for other classes -->
@@ -47,7 +49,7 @@
                             </td>
                             {% for day in range(6) %}
                                 {% if day < lessons[0]|length %}
-                                    <td>{{ lessons[0][day][4] }} <br> teacher: {{lessons[0][day][3]}} <br> classroom: {{lessons[0][day][2]}}</td>
+                                    <td>class: {{lessons[0][day][4]}} <br> classroom: {{lessons[0][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -57,7 +59,7 @@
                             <td>09:15 - 10:00</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[1]|length %}
-                                    <td>{{ lessons[1][day][4] }} <br> teacher: {{lessons[1][day][3]}} <br> classroom: {{lessons[1][day][2]}}</td>
+                                    <td>class: {{ lessons[1][day][4] }} <br> classroom: {{lessons[1][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -68,7 +70,7 @@
                             <td>10:20 - 11:10</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[2]|length %}
-                                    <td>{{ lessons[2][day][4] }} <br> teacher: {{lessons[2][day][3]}} <br> classroom: {{lessons[2][day][2]}}</td>
+                                    <td>class: {{ lessons[2][day][4] }} <br> classroom: {{lessons[2][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -78,7 +80,7 @@
                             <td>11:10 - 11:55</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[3]|length %}
-                                    <td>{{ lessons[3][day][4] }} <br> teacher: {{lessons[3][day][3]}} <br> classroom: {{lessons[3][day][2]}}</td>
+                                    <td>class: {{ lessons[3][day][4] }} <br> classroom: {{lessons[3][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -88,7 +90,7 @@
                             <td>12:10 - 12:55</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[4]|length %}
-                                    <td>{{ lessons[4][day][4] }} <br> teacher: {{lessons[4][day][3]}} <br> classroom: {{lessons[4][day][2]}}</td>
+                                    <td>class: {{ lessons[4][day][4] }} <br> classroom: {{lessons[4][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -98,7 +100,7 @@
                             <td>12:55 - 13:35</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[5]|length %}
-                                    <td>{{ lessons[5][day][4] }} <br> teacher: {{lessons[5][day][3]}} <br> classroom: {{lessons[5][day][2]}}</td>
+                                    <td>class: {{ lessons[5][day][4] }} <br> classroom: {{lessons[5][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -108,7 +110,7 @@
                             <td>13:50 - 14:35</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[6]|length %}
-                                    <td>{{ lessons[6][day][4] }} <br> teacher: {{lessons[6][day][3]}} <br> classroom: {{lessons[6][day][2]}}</td>
+                                    <td>class: {{ lessons[6][day][4] }} <br> classroom: {{lessons[6][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -118,7 +120,7 @@
                             <td>14:35 - 15:20</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[7]|length %}
-                                    <td>{{ lessons[7][day][4] }} <br> teacher: {{lessons[7][day][3]}} <br> classroom: {{lessons[7][day][2]}}</td>
+                                    <td>class: {{ lessons[7][day][4] }} <br> classroom: {{lessons[7][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -128,7 +130,7 @@
                             <td>15:20 - 16:00</td>
                             {% for day in range(6) %}
                                 {% if day < lessons[8]|length %}
-                                    <td>{{ lessons[8][day][4] }} <br> teacher: {{lessons[8][day][3]}} <br> classroom: {{lessons[8][day][2]}}</td>
+                                    <td>class: {{ lessons[8][day][4] }} <br> classroom: {{lessons[8][day][2]}}</td>
                                 {% else %}
                                     <td></td>
                                 {% endif %}
@@ -138,8 +140,8 @@
                     </tbody>
                 </table>
             </div>
+            <a href="{{ url_for('home', selected_grade=grades_names_list[0]) }}" class="btn btn-primary">Home page</a>
         </div>
-        <a href="{{ url_for('login_page') }}" class="btn btn-primary">Teacher login</a>
     </div>
 
     <!-- Include Bootstrap JS (optional) -->
@@ -147,11 +149,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        const classSelector = document.getElementById("classSelector");
-        const classForm = document.getElementById("classForm");
+        const teacherSelector = document.getElementById("teacherSelector");
+        const teacherForm = document.getElementById("teacherForm");
 
-        classSelector.addEventListener("change", () => {
-            classForm.submit()
+        teacherSelector.addEventListener("change", () => {
+            teacherForm.submit()
         });
 
     </script>

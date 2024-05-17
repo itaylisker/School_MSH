@@ -4,7 +4,6 @@ from cryptography.fernet import Fernet
 class Enum:
 
     ADMIN = 'admin'
-    FLASK = 'flask'
     LOGIN_INFO = 'login'
     SUCCESS = 'success'
     FAIL = 'failure'

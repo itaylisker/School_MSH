@@ -22,42 +22,46 @@ def load_user(user_id):
     return User(user_id)
 
 
-client_socket.send(encrypt_message(f'{Enum.GET_LESSONS}'))
-file_size = decrypt_message(client_socket.recv(4096))
-lessons = json.loads(decrypt_message(client_socket.recv(int(file_size))))
-client_socket.send(encrypt_message(f'{Enum.GET_GRADES}'))
-file_size = decrypt_message(client_socket.recv(4096))
-grades = json.loads(decrypt_message(client_socket.recv(int(file_size))))
-client_socket.send(encrypt_message(f'{Enum.GET_TEACHERS}'))
-file_size = decrypt_message(client_socket.recv(4096))
-teachers = json.loads(decrypt_message(client_socket.recv(int(file_size))))
-teachers_subject = {teacher[1]: teacher[-1] for teacher in teachers}
-teachers_names_list = [teacher[1] for teacher in teachers]
-grades_names_list = [grade[1] for grade in grades]
-lessons_dict_by_grade = {grade_name: [[], [], [], [], [], [], [], [], []] for grade_name in grades_names_list}
-lessons_dict_by_teacher = {teacher_name: [[], [], [], [], [], [], [], [], []] for teacher_name in teachers_names_list}
-for lesson in lessons:
-    hour = lesson[0]
-    day = lesson[1]
-    classroom = lesson[2]
-    teacher = lesson[3]
-    subject = lesson[4]
-    grade = lesson[5]
-    lessons_dict_by_grade[grade][hour].append(lesson[:5])
-    new_lesson = lesson[:3]
-    new_lesson.append(lesson[4])
-    new_lesson.append(lesson[5])
-    lessons_dict_by_teacher[teacher][hour].append(new_lesson)
-
-for key in lessons_dict_by_grade.keys():
-    for lesson in range(9):
-        lessons_dict_by_grade[key][lesson].sort(key=lambda x: x[1])
-for key in lessons_dict_by_teacher.keys():
-    for lesson in range(9):
-        lessons_dict_by_teacher[key][lesson].sort(key=lambda x: x[1])
-print(lessons_dict_by_grade)
-print(lessons_dict_by_teacher)
-
+# client_socket.send(encrypt_message(f'{Enum.GET_LESSONS}'))
+# file_size = decrypt_message(client_socket.recv(4096))
+# lessons = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+# client_socket.send(encrypt_message(f'{Enum.GET_GRADES}'))
+# file_size = decrypt_message(client_socket.recv(4096))
+# grades = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+# client_socket.send(encrypt_message(f'{Enum.GET_TEACHERS}'))
+# file_size = decrypt_message(client_socket.recv(4096))
+# teachers = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+# teachers_subject = {teacher[1]: teacher[-1] for teacher in teachers}
+# teachers_names_list = [teacher[1] for teacher in teachers]
+# grades_names_list = [grade[1] for grade in grades]
+# lessons_dict_by_grade = {grade_name: [[], [], [], [], [], [], [], [], []] for grade_name in grades_names_list}
+# lessons_dict_by_teacher = {teacher_name: [[], [], [], [], [], [], [], [], []] for teacher_name in teachers_names_list}
+# for lesson in lessons:
+#     hour = lesson[0]
+#     day = lesson[1]
+#     classroom = lesson[2]
+#     teacher = lesson[3]
+#     subject = lesson[4]
+#     grade = lesson[5]
+#     lessons_dict_by_grade[grade][hour].append(lesson[:5])
+#     new_lesson = lesson[:3]
+#     new_lesson.append(lesson[4])
+#     new_lesson.append(lesson[5])
+#     lessons_dict_by_teacher[teacher][hour].append(new_lesson)
+#
+# for key in lessons_dict_by_grade.keys():
+#     for lesson in range(9):
+#         lessons_dict_by_grade[key][lesson].sort(key=lambda x: x[1])
+# for key in lessons_dict_by_teacher.keys():
+#     for lesson in range(9):
+#         lessons_dict_by_teacher[key][lesson].sort(key=lambda x: x[1])
+# print(lessons_dict_by_grade)
+# print(lessons_dict_by_teacher)
+lessons_dict_by_grade = {}
+lessons_dict_by_teacher = {}
+teachers_names_list = []
+grades_names_list = []
+teachers_subject = {}
 
 @app.route('/')
 def index():
@@ -66,7 +70,42 @@ def index():
 
 @app.route("/class/<selected_grade>", methods=["GET", "POST"])
 def home(selected_grade=None):
+    global grades_names_list, teachers_names_list, lessons_dict_by_teacher, lessons_dict_by_grade, teachers_subject
     logout_user()
+    client_socket.send(encrypt_message(f'{Enum.GET_LESSONS}'))
+    file_size = decrypt_message(client_socket.recv(4096))
+    lessons = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+    client_socket.send(encrypt_message(f'{Enum.GET_GRADES}'))
+    file_size = decrypt_message(client_socket.recv(4096))
+    grades = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+    client_socket.send(encrypt_message(f'{Enum.GET_TEACHERS}'))
+    file_size = decrypt_message(client_socket.recv(4096))
+    teachers = json.loads(decrypt_message(client_socket.recv(int(file_size))))
+    teachers_subject = {teacher[1]: teacher[-1] for teacher in teachers}
+    teachers_names_list = [teacher[1] for teacher in teachers]
+    grades_names_list = [grade[1] for grade in grades]
+    lessons_dict_by_grade = {grade_name: [[], [], [], [], [], [], [], [], []] for grade_name in grades_names_list}
+    lessons_dict_by_teacher = {teacher_name: [[], [], [], [], [], [], [], [], []] for teacher_name in
+                               teachers_names_list}
+    for lesson in lessons:
+        hour = lesson[0]
+        day = lesson[1]
+        classroom = lesson[2]
+        teacher = lesson[3]
+        subject = lesson[4]
+        grade = lesson[5]
+        lessons_dict_by_grade[grade][hour].append(lesson[:5])
+        new_lesson = lesson[:3]
+        new_lesson.append(lesson[4])
+        new_lesson.append(lesson[5])
+        lessons_dict_by_teacher[teacher][hour].append(new_lesson)
+
+    for key in lessons_dict_by_grade.keys():
+        for lesson in range(9):
+            lessons_dict_by_grade[key][lesson].sort(key=lambda x: x[1])
+    for key in lessons_dict_by_teacher.keys():
+        for lesson in range(9):
+            lessons_dict_by_teacher[key][lesson].sort(key=lambda x: x[1])
     if selected_grade:
         print('no wayyyyyyyyyyyyyyyyyyyyy')
         selected_class = selected_grade

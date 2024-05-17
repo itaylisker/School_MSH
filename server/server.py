@@ -215,10 +215,9 @@ def add_grade(data, client):
     else:
         insert_data('grades', 'name, hours_per_subject, max_hours_per_day, max_hours_per_friday', (grade_name, hours_per_subject, max_hours_day, max_hours_friday))
         add_classroom([Enum.ADD_CLASSROOM, grade_name, False], client, True)
-        data_to_send = f"{(select_data('grades', 'id', {'name': grade_name})[0][0], select_data('classrooms', 'id', {'name': grade_name})[0][0])}"
+        data_to_send = f"{json.dumps((select_data('grades', 'id', {'name': grade_name})[0][0], select_data('classrooms', 'id', {'name': grade_name})[0][0]))}"
         print('dataaaaaaaaaaaaaaaaaaaa', data_to_send)
         client.send(encrypt_message(data_to_send))
-
 
 def update_grades(data, client):
     """

@@ -28,7 +28,6 @@ class BaseChildWindow:
 
 
 class BaseFrame(tk.Frame):
-    # TODO: implement this properly into the code below
     def __init__(self, master, width=500, height=500, **kwargs):
         super().__init__(master, width=width, height=height, **kwargs)
         self.config(bg='#E0F2F1')
@@ -438,7 +437,7 @@ class DeleteGradeFrame(BaseFrame):
                          wraplength=300, anchor='w', justify='left').pack(fill='x')
 
                 tk.Button(grade_frame, text='DELETE',
-                          command=lambda: self.delete_grade(grade_id, grade.name)).pack(fill='x')
+                          command=lambda gid=grade_id, gname=grade.name: self.delete_grade(gid, gname)).pack(fill='x')
 
                 if i != len(grades) - 1:
                     tk.Frame(scrollable_frame, height=1, bg="black").pack(fill='x', padx=10, pady=5)
